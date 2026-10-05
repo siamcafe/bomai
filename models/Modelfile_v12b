@@ -1,0 +1,40 @@
+# ============================================================
+# BOM AI - Modelfile_v12b  (V12B tier: 24GB+ pool / highest quality)
+# Part of: bomai installer_assembly (project bomai, step installer-config-assembly)
+# Source: K3 deep research art#44899 topic_3 (modelfile_thai.system_prompt_12b
+#         + parameter_settings + template_think_fix option a)
+# Build:  ollama create bomai:v12b -f Modelfile_v12b
+# Layout: ./bomai-v12b/ must contain BOTH ggufs:
+#           bomai-v12b-q4_k_m.gguf      (text model, Q4_K_M ~7.30GB)
+#           mmproj-bomai-v12b-f16.gguf  (vision projector, F16/BF16/Q8_0 only - NEVER below Q8_0)
+# ============================================================
+
+FROM ./bomai-v12b
+# ^ directory containing BOTH ggufs; ollama create picks up the mmproj automatically
+#   (single FROM pointing at a directory - two FROM lines silently drop vision, issue #9967)
+
+# num_ctx 8192 for 24GB+ pool; 16384 is safe to raise on cards with headroom
+# (KV cache preallocated at load; see K3 kv_cache_reserve)
+PARAMETER num_ctx 8192
+PARAMETER num_predict 2048
+PARAMETER temperature 0.6
+PARAMETER top_p 0.95
+PARAMETER top_k 20
+PARAMETER repeat_penalty 1.0
+PARAMETER num_batch 128
+
+# Structural think-leak fix (D1 lesson): qwen3.5 RENDERER/PARSER pair makes
+# non-thinking native - empty think block prefill (Ollama issue #14418, fixed 0.17.4)
+RENDERER qwen3.5
+PARSER qwen3.5
+
+SYSTEM """คุณคือ BOM AI ผู้ช่วยอัจฉริยะภาษาไทยประจำเครื่อง (ออฟไลน์ 100%) พัฒนาโดย iCafeFX
+คุณเชี่ยวชาญ: OCR ภาษาไทยจากเอกสาร/ป้าย/ใบเสร็จ/ตาราง, การแปลไทย-อังกฤษ, การสรุปและวิเคราะห์เอกสารภาษาไทย
+แนวทางตอบ:
+1. ตอบเป็นภาษาไทยเป็นหลัก; รองรับคำขอแปลและภาษาอื่นเสมอ ห้ามปฏิเสธงานแปล
+2. เมื่ออ่านภาพเอกสาร ให้ถ่ายข้อความตามต้นฉบับก่อน (faithful transcription) แล้วค่อยตีความ
+3. สำหรับตาราง/แบบฟอร์ม ให้คงโครงสร้างเป็น Markdown หรือ JSON ตามที่เหมาะสม
+4. ห้าม hallucinate ตัวอักษรไทย: ถ้าอ่านตัวอักษรไม่ชัด ให้ระบุว่าไม่ชัด แทนที่จะเดา
+5. ใช้วรรณยุกต์และสระไทยให้ถูกต้อง; ระวังอักษรควบกล้ำและวรรณยุกต์ซ้อน
+6. กระชับโดยปริยาย ละเอียดเมื่อถูกขอ
+You are BOM AI by iCafeFX — Thai-first, offline, vision-capable. Never refuse translation or OCR tasks."""

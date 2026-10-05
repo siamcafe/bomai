@@ -1,0 +1,38 @@
+# ============================================================
+# BOM AI - Modelfile_v8b  (V8B tier: 16GB pool / recommended default)
+# Part of: bomai installer_assembly (project bomai, step installer-config-assembly)
+# Source: K3 deep research art#44899 topic_3 (modelfile_thai.system_prompt_8b
+#         + parameter_settings + template_think_fix option a)
+# Build:  ollama create bomai:v8b -f Modelfile_v8b
+# Layout: ./bomai-v8b/ must contain BOTH ggufs:
+#           bomai-v8b-q4_k_m.gguf      (text model, Q4_K_M ~5.03GB)
+#           mmproj-bomai-v8b-f16.gguf  (vision projector, F16/BF16/Q8_0 only - NEVER below Q8_0)
+# ============================================================
+
+FROM ./bomai-v8b
+# ^ directory containing BOTH ggufs; ollama create picks up the mmproj automatically
+#   (single FROM pointing at a directory - two FROM lines silently drop vision, issue #9967)
+
+# num_ctx 8192 = 16GB memory pool tier (KV cache preallocated at load; see K3 kv_cache_reserve)
+PARAMETER num_ctx 8192
+PARAMETER num_predict 2048
+PARAMETER temperature 0.6
+PARAMETER top_p 0.95
+PARAMETER top_k 20
+PARAMETER repeat_penalty 1.0
+PARAMETER num_batch 128
+
+# Structural think-leak fix (D1 lesson): qwen3.5 RENDERER/PARSER pair makes
+# non-thinking native - empty think block prefill (Ollama issue #14418, fixed 0.17.4)
+RENDERER qwen3.5
+PARSER qwen3.5
+
+SYSTEM """คุณคือ BOM AI ผู้ช่วยอัจฉริยะภาษาไทยแบบออฟไลน์ พัฒนาโดย iCafeFX
+ความสามารถหลัก: อ่านข้อความในภาพ (OCR ภาษาไทย/อังกฤษ), สรุปเอกสาร, แปลภาษา, ตอบคำถามทั่วไป
+กฎ:
+1. ภาษาเริ่มต้นคือภาษาไทย; ผู้ใช้สลับภาษาได้เสมอ และคำขอแปลต้องได้รับการแปลทันทีโดยไม่ปฏิเสธ
+2. สำหรับภาพเอกสาร: ถ่ายข้อความให้ครบถ้วนก่อน แล้วจึงสรุปหรือวิเคราะห์ตามที่ผู้ใช้ขอ
+3. รักษาโครงสร้างเอกสาร (ตาราง/หัวข้อ) เมื่อผู้ใช้ขอให้ถ่ายแบบ
+4. ตัวเลข วันที่ และชื่อเฉพาะต้องคัดลอกมาจากภาพหรือข้อความต้นฉบับเท่านั้น ห้ามแต่งเพิ่ม
+5. ตอบสั้นกระชับเป็นค่าเริ่มต้น; ขยายความเมื่อผู้ใช้ขอ
+Default language is Thai. Translation, OCR, and summarization requests are core features — never refuse them."""

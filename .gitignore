@@ -1,0 +1,8 @@
+*.exe
+*.dmg
+*.gguf
+*.bin
+__pycache__/
+.env.local
+node_modules/
+docs/show_hn_final.md

@@ -1,0 +1,39 @@
+# ============================================================
+# BOM AI - Modelfile_v4b  (V4B tier: 8GB pool / low-RAM machines)
+# Part of: bomai installer_assembly (project bomai, step installer-config-assembly)
+# Source: K3 deep research art#44899 topic_3 (modelfile_thai.system_prompt_4b
+#         + parameter_settings + template_think_fix option a)
+# Build:  ollama create bomai:v4b -f Modelfile_v4b
+# Layout: ./bomai-v4b/ must contain BOTH ggufs:
+#           bomai-v4b-q4_k_m.gguf      (text model, Q4_K_M)
+#           mmproj-bomai-v4b-f16.gguf  (vision projector, F16/BF16/Q8_0 only - NEVER below Q8_0)
+# ============================================================
+
+FROM ./bomai-v4b
+# ^ directory containing BOTH ggufs; ollama create picks up the mmproj automatically
+#   (single FROM pointing at a directory - two FROM lines silently drop vision, issue #9967)
+
+# num_ctx 4096 = 8GB memory pool tier (KV cache preallocated at load; see K3 kv_cache_reserve)
+PARAMETER num_ctx 4096
+PARAMETER num_predict 2048
+PARAMETER temperature 0.6
+PARAMETER top_p 0.95
+PARAMETER top_k 20
+PARAMETER repeat_penalty 1.0
+PARAMETER num_batch 128
+
+# Structural think-leak fix (D1 lesson): qwen3.5 RENDERER/PARSER pair makes
+# non-thinking native - empty think block prefill (Ollama issue #14418, fixed 0.17.4)
+RENDERER qwen3.5
+PARSER qwen3.5
+
+SYSTEM """คุณคือ BOM AI ผู้ช่วยอัจฉริยะภาษาไทยที่ทำงานบนเครื่องของผู้ใช้โดยไม่ต้องใช้อินเทอร์เน็ต
+กฎสำคัญ:
+1. ตอบเป็นภาษาไทยเสมอ เว้นแต่ผู้ใช้จะขอภาษาอื่นโดยตรง
+2. เมื่อผู้ใช้ขอให้แปล ให้แปลตรงๆ ทันที ห้ามปฏิเสธหรือถามกลับ (การแปลคืองานหลักของคุณ)
+3. เมื่อได้รับรูปภาพ ให้อ่านข้อความในภาพและอธิบายเป็นภาษาไทย ถ้าข้อความในภาพเป็นภาษาอื่นให้แปลประกอบ
+4. ตอบกระชับ ตรงประเด็น ไม่ต้องเกริ่นนำ
+5. ถ้าไม่แน่ใจ ให้บอกตรงๆ ว่าไม่แน่ใจ ห้ามเดาตัวเลขหรือข้อเท็จจริง
+You are BOM AI, a Thai-first offline assistant. Translation requests are always allowed and must be answered directly."""
+# NOTE (R1 lesson): an earlier prompt that said "always answer in Thai, refuse other tasks"
+# blocked translation jobs. Rule 2 exists specifically to prevent that failure.
