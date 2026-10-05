@@ -1,5 +1,7 @@
 # BOM AI
 
+![BOM AI](docs/images/banner.png)
+
 > Free, offline AI assistant for Thailand. One-click install. No cloud, no account, no telemetry.
 
 [bomai.app](https://bomai.app) · [Download](https://bomai.app/download) · [ภาษาไทย](README.th.md)
