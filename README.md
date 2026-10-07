@@ -105,3 +105,5 @@ Powered by [Ollama](https://ollama.com) and [Open WebUI](https://openwebui.com)
 
 MIT — see [LICENSE](LICENSE). Open WebUI keeps its own BSD-3-Clause license;
 model base licenses apply to their respective weights.
+
+Free code signing provided by SignPath.io, certificate by SignPath Foundation
