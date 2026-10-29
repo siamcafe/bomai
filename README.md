@@ -88,6 +88,27 @@ not GPT-4 level — but enough for everyday Thai work, and far more private.
 Nowhere. All chats and images are stored only on your computer, and you can
 delete them at any time.
 
+## Release Notes
+
+### v0.3.2 (2026-10-30)
+
+- 🎯 **Official Release** — Promoted from v0.3.1-rc.1 to stable v0.3.2
+- ✅ **All 6 Ship Gates PASSED** — Vision, Identity, Zero-Han (250/250=0), Thai≥9.0, Refusal, Regression
+- 🔒 **Zero-Han Solution** — GBNF grammar allowlist eliminates all CJK character leakage
+- 👁️ **Vision (VL) Verified** — Qwen3.5-4B multimodal inference confirmed working
+- 🤖 **Identity Correct** — Model responds as "BOM" with proper Thai identity
+- ⚙️ **GOD CONFIG v7.0** — Production inference parameters locked and deployed fleet-wide
+- 🧹 **Fleet Optimization** — 210 GiB disk reclaimed, 10 orphan models removed, 15 Docker images pruned
+- 🖼️ **ComfyUI Fleet v0.43.0** — All 7 instances upgraded and verified
+
+Model details: base `DavidAU/Qwen3.5-4B-Claude-4.6-HighIQ-THINKING`, Q4_K_M GGUF
+(~3.4 GB), Qwen3-VL architecture, 3 rounds SFT + repair (PhaseA 465 steps,
+repair_r2 157, repair_r3 162). Model weights: Apache 2.0 · Code in this repo: MIT.
+
+### v0.3.1-rc.1 (2026-10-28)
+
+- First release candidate of the Thai VL model line.
+
 ## Contributing
 
 We'd love help with:
