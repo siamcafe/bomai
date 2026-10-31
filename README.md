@@ -1,130 +1,152 @@
-# BOM AI
+# 🤖 BOM AI — ผู้ช่วย AI ภาษาไทย ฟรี 100% ทำงานบนเครื่องคุณเอง
 
-![BOM AI](docs/images/banner.png)
+![BOM AI Hero Banner](docs/images/hero_banner_wide.png)
 
-> Free, offline AI assistant for Thailand. One-click install. No cloud, no account, no telemetry.
+> **"แจกฟรี สำหรับมนุษยชาติ"** — ติดตั้งคลิกเดียว ใช้ได้ทันที ข้อมูลไม่ถูกส่งออกนอกเครื่อง
+> ส่วนหนึ่งของภารกิจ *Heal the World* — AI ฟรีเพื่อการศึกษาสำหรับคนไทยทุกคน
 
-[bomai.app](https://bomai.app) · [Download](https://bomai.app/download) · [ภาษาไทย](README.th.md)
+[เว็บไซต์ bomai.app](https://bomai.app) · [ดาวน์โหลด](https://bomai.app/download) · [คู่มือฉบับเต็ม](README.th.md) · [English](README.en.md)
 
-## What is BOM AI?
+[![Download](https://img.shields.io/badge/download-bomai.app-blue)](https://bomai.app/download) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE) ![Version](https://img.shields.io/badge/version-v0.3.2-orange)
 
-- One-click installer: bundles [Ollama](https://ollama.com) + [Open WebUI](https://openwebui.com) + curated Thai VL (vision-language) models
-- Runs 100% offline after install
-- Free forever: no signup, no ads, no message limits, no data collection
-- Reads Thai text in images: receipts, slips, signs, documents, screenshots
-- "Heal the World" mission: free AI education for Thai communities — classes for schools and institutions, no charge
+## ✨ ความสามารถ
 
-Most AI in Thailand is cloud-only and English-first. Rural and older users on old
-hardware and metered connections get locked out. We wanted an AI that just works
-on an 8 GB office PC with the internet unplugged.
+- 🇹🇭 **ภาษาไทยเป็นหลัก 100%** — ถาม-ตอบ อ่าน เขียน แปล ภาษาไทยได้เป็นธรรมชาติ ผ่านการทดสอบ Thai gate ≥ 9.0
+- 🔒 **ทำงานบนเครื่องคุณ 100%** — ทุกอย่างรันที่ local (127.0.0.1) แชทและรูปภาพไม่ถูกส่งออกนอกเครื่องแม้แต่ไบต์เดียว
+- 🖼️ **อ่านข้อความในภาพ (Vision/OCR)** — ถ่ายใบเสร็จ สลิป ป้ายหน้าร้าน เอกสาร แล้วถามได้ทันที
+- ⚡ **ติดตั้ง 1 คลิก** — Windows / macOS / Linux ตัวติดตั้งตรวจสเปกเครื่องแล้วเลือกโมเดลที่เหมาะสมให้อัตโนมัติ
+- 🚫 **ออฟไลน์ได้เต็มรูปแบบ** — ใช้เน็ตเฉพาะตอนติดตั้งครั้งแรก หลังจากนั้นตัดเน็ตก็คุยได้
+- 💚 **ฟรีไม่มีเงื่อนไข** — ไม่ต้องสมัครสมาชิก ไม่มีโฆษณา ไม่จำกัดจำนวนข้อความ ไม่มีการเก็บ/ขายข้อมูล
 
-## Model Tiers
+## 📊 ผลทดสอบจริง (Benchmark)
 
-| Tier | RAM | Download | Capabilities |
-|------|-----|----------|--------------|
-| V4B | 8 GB | ~2.5 GB | Thai chat, image reading, Q&A, short translation |
-| V8B | 16 GB | ~5 GB | Everything V4B + document translation, longer documents |
-| V12B | 24 GB+ | ~7.3 GB | Full capability: charts, tables, complex vision tasks |
+**ระบบผลิต (Production pipeline) — ตรวจสอบโดย QC20, GOD CONFIG v7.0:**
 
-The installer detects your RAM + VRAM and recommends the right tier automatically.
-You can always override the choice.
+| ตัวชี้วัด | ค่าที่วัดได้จริง |
+|---|---|
+| ⚡ TTFT (เวลาตอบตัวอักษรแรก) | **2.29 วินาที** |
+| 🔍 Web search แบบ end-to-end | **19.21 วินาที** |
+| 📀 Cache hit TTFT | **0.062 วินาที** |
+| 🏃 ความเร็วสร้างคำตอบ | **22.4 tokens/วินาที** |
+| 🇹🇭 คุณภาพภาษาไทย QC20 | **20/20 PASS** |
+| 🎯 การรั่วของอักษรจีน (Han leak) | **0 ตัวอักษร** |
 
-## Quick Start
+**โมเดล BOM AI v0.3.2 — ผ่านประตูคุณภาพทั้ง 6 ด่าน (Ship Gates 6/6 PASS):**
 
-1. Download from [bomai.app/download](https://bomai.app/download)
-2. Run the installer — it detects your hardware and picks the right model
-3. Click the **BOM AI** icon — a chat window opens in your browser, in Thai
+| ด่านตรวจ | ผลลัพธ์ |
+|---|---|
+| Zero-Han (อักษรจีนรั่ว) | **250/250 บันทึก = 0 อักษรจีน** |
+| คุณภาพภาษาไทย | **≥ 9.0** |
+| Vision (อ่านภาพ) | ✅ PASS |
+| ตัวตน/Identity | ✅ PASS (ตอบว่าเป็น "BOM") |
+| การปฏิเสธงานที่ควรทำได้ (Refusal) | ✅ PASS |
+| Regression | ✅ PASS |
 
-Everything binds to `127.0.0.1` only (UI on port 8787, Ollama on port 11434).
-Nothing listens on the network.
+## 🚀 ติดตั้ง 1 คลิก
 
-## System Requirements
+### Windows (PowerShell)
+```powershell
+# ดาวน์โหลด 86KB แล้วตัวติดตั้งจะดึง component เอง (~3GB)
+Invoke-WebRequest -Uri "https://bomai.app/dl/Install-BOM-AI-Online.bat" -OutFile "Install-BOM-AI.bat"
+.\Install-BOM-AI.bat
+```
 
-- Windows 10 (1903)+, macOS 12+, or Ubuntu 22.04+
-- Minimum 8 GB RAM (V4B); 16 GB recommended (V8B)
-- ~10 GB free disk space
-- No internet needed after install
+### macOS
+```bash
+curl -fsSL https://bomai.app/dl/install-bom-ai-mac.sh | bash
+```
 
-## How It Works
+### Linux
+```bash
+curl -fsSL https://bomai.app/dl/install-bom-ai-linux.sh | bash
+```
 
-- **VL models**: QLoRA fine-tunes (r64 / alpha 128, bf16) of open vision-language
-  base models on Thai instruction data, exported to GGUF and served by Ollama
-- **Vision**: the models read Thai text inside images — receipts, signs,
-  screenshots, charts
-- **Hardware detection**: a small per-OS script probes RAM + VRAM and maps it to
-  a model tier before anything downloads (see `installer/`)
-- **Stack**: [Ollama](https://ollama.com) (model serving) + [Open WebUI](https://openwebui.com)
-  (chat interface, BSD-3-Clause) + our installer scripts and configs (this repo)
+หรือดาวน์โหลดตัวติดตั้งแบบสมบูรณ์จาก **[bomai.app/download](https://bomai.app/download)** (มี SHA-256 ให้ตรวจสอบทุกไฟล์)
 
-## FAQ
+## 🤖 เลือกโมเดลตามสเปกเครื่อง
 
-**Is it really free?**
-Yes — 100%. No subscription, no ads, no data selling, no credit card, no usage
-cap. BOM AI is a free project so every Thai user can have a personal AI.
+| ระดับ | RAM | ดาวน์โหลด | เหมาะกับ |
+|---|---|---|---|
+| **V4B** | 8 GB+ | ~2.5 GB | แชทไทย อ่านภาพ ถาม-ตอบ งานสั้น |
+| **V8B** | 16 GB+ | ~5.0 GB | งานเอกสารยาว แปลไทย-อังกฤษเต็มรูปแบบ |
+| **V12B** | 24 GB+ | ~7.3 GB | คุณภาพสูงสุด ตาราง แผนภูมิ งาน Vision ซับซ้อน |
 
-**Is it safe?**
-Everything runs on your own computer. Chats, images, and files never leave the
-machine, and there is no account to breach. Windows SmartScreen may warn because
-the binary is new — the download page lists SHA-256 hashes so you can verify
-what you downloaded.
+ตัวติดตั้งตรวจ RAM + VRAM ให้เอง แล้วแนะนำระดับที่เหมาะกับเครื่อง — แก้ไขเองได้เสมอ
 
-**Does it need internet?**
-Only for the initial download and install. After that, BOM AI works fully offline.
+## 🔧 GOD CONFIG v7.0 (LOCKED)
 
-**Does it run on old computers?**
-Yes. Any Windows/macOS/Linux machine with 8 GB RAM runs the V4B model; 16 GB
-suits V8B; 24 GB+ gets V12B.
+พารามิเตอร์ระดับโปรดักชันที่ผ่านการ QC จนนิ่ง ห้ามเปลี่ยน:
 
-**Can I use it on mobile?**
-Not in this version — BOM AI is designed for desktop computers.
+| พารามิเตอร์ | ค่า | เหตุผล |
+|---|---|---|
+| temperature | **0.6** | เกิน 0.7 = คุณภาพภาษาไทยตก |
+| top_p | **0.95** | สมดุลความหลากหลายของคำ |
+| top_k | **20** | โฟกัสคลังคำศัพท์ |
+| repeat_penalty | **1.0** | ≠1.0 = มีโอกาสรั่วภาษาจีน |
+| presence_penalty | **0.0** | ⛔ เหล็กใน — ค่าอื่นที่ไม่ใช่ 0 = อักษรจีนรั่ว |
+| num_ctx | **8192** | เหมาะกับภาษาไทย (ตัวติดตั้งปรับตามระดับ RAM: 4096/8192) |
+| num_predict | **4096** | คำตอบครบถ้วน |
+| think | **false** | กัน code-switch ภาษา |
 
-**How is it different from ChatGPT?**
-ChatGPT runs on a company's servers and needs an account plus constant internet.
-BOM AI runs on your own machine: no signup, works offline, free and unlimited,
-and your data never leaves the computer. The trade-off: smaller models that are
-not GPT-4 level — but enough for everyday Thai work, and far more private.
+## 📸 หน้าจอโปรแกรม
 
-**Where does my data go?**
-Nowhere. All chats and images are stored only on your computer, and you can
-delete them at any time.
+| หน้าแรก | แชทภาษาไทย | แชทภาษาอังกฤษ | ตั้งค่า |
+|---|---|---|---|
+| ![หน้าแรก](docs/images/screenshots/01_home.png) | ![แชทไทย](docs/images/screenshots/02_chat_thai.png) | ![แชทอังกฤษ](docs/images/screenshots/03_chat_english.png) | ![ตั้งค่า](docs/images/screenshots/04_settings.png) |
 
-## Release Notes
+## 🏆 รายละเอียดโมเดล
+
+- **Base model:** [DavidAU/Qwen3.5-4B-Claude-4.6-HighIQ-THINKING](https://huggingface.co/DavidAU/Qwen3.5-4B-Claude-4.6-HighIQ-THINKING)
+- **สถาปัตยกรรม:** Qwen3-VL (vision-language) · ควอนไทซ์ GGUF **Q4_K_M** (~3.4 GB)
+- **การเทรน:** QLoRA fine-tune (r=64, alpha=128, bf16) 3 รอบ SFT + repair (PhaseA 465 steps, repair_r2 157, repair_r3 162) บนข้อมูลสอนภาษาไทย + **GBNF zero-Han grammar** ตัดอักษรจีนรั่วได้ 100%
+- **Zero-Han:** ✅ 250/250 บันทึกทดสอบ = 0 อักษรจีน
+- **ดาวน์โหลดโมเดลจาก Hugging Face:** [siamcafe/bomai-r75-highiq-safety](https://huggingface.co/siamcafe/bomai-r75-highiq-safety)
+
+```bash
+ollama pull siamcafe/bomai-r75-highiq-safety:v1
+ollama run siamcafe/bomai-r75-highiq-safety:v1
+```
+
+## 📖 คู่มือการใช้งาน
+
+- คู่มือฉบับเต็มภาษาไทย: [README.th.md](README.th.md) · [siamcafebook.com/bomai/manual](https://siamcafebook.com/bomai/manual/)
+- คำถามที่พบบ่อย วิธีถอนการติดตั้ง และเทคนิคการใช้งาน อยู่ในคู่มือ
+
+## 🗒️ บันทึกการอัปเดต
 
 ### v0.3.2 (2026-10-30)
-
-- 🎯 **Official Release** — Promoted from v0.3.1-rc.1 to stable v0.3.2
-- ✅ **All 6 Ship Gates PASSED** — Vision, Identity, Zero-Han (250/250=0), Thai≥9.0, Refusal, Regression
-- 🔒 **Zero-Han Solution** — GBNF grammar allowlist eliminates all CJK character leakage
-- 👁️ **Vision (VL) Verified** — Qwen3.5-4B multimodal inference confirmed working
-- 🤖 **Identity Correct** — Model responds as "BOM" with proper Thai identity
-- ⚙️ **GOD CONFIG v7.0** — Production inference parameters locked and deployed fleet-wide
-- 🧹 **Fleet Optimization** — 210 GiB disk reclaimed, 10 orphan models removed, 15 Docker images pruned
-- 🖼️ **ComfyUI Fleet v0.43.0** — All 7 instances upgraded and verified
-
-Model details: base `DavidAU/Qwen3.5-4B-Claude-4.6-HighIQ-THINKING`, Q4_K_M GGUF
-(~3.4 GB), Qwen3-VL architecture, 3 rounds SFT + repair (PhaseA 465 steps,
-repair_r2 157, repair_r3 162). Model weights: Apache 2.0 · Code in this repo: MIT.
+- 🎯 **Official Release** — เลื่อนจาก v0.3.1-rc.1 เป็น stable v0.3.2
+- ✅ ผ่าน Ship Gates ทั้ง 6 ด่าน — Vision, Identity, Zero-Han (250/250=0), Thai≥9.0, Refusal, Regression
+- 🔒 **Zero-Han Solution** — GBNF grammar allowlist ตัดการรั่วของอักษร CJK ทั้งหมด
+- 👁️ Vision (VL) ยืนยันการใช้งานจริง — Qwen3.5-4B multimodal
+- ⚙️ **GOD CONFIG v7.0** — พารามิเตอร์ระดับโปรดักชันล็อกแล้ว ใช้ทั่วทั้ง fleet
 
 ### v0.3.1-rc.1 (2026-10-28)
+- Release candidate แรกของสายโมเดล Thai VL
 
-- First release candidate of the Thai VL model line.
+## 🤝 ร่วมพัฒนา
 
-## Contributing
+ยินดีทุกการมีส่วนร่วม:
+- ปรับ BOM AI ไปใช้กับภาษา/ประเทศอื่น — แพตเทิร์นนี้ขยายได้
+- ชุดข้อมูลสอนภาษาไทย (Thai instruction datasets) เพื่อเทรนโมเดลรุ่นถัดไป
+- ปรับปรุงตัวติดตั้ง (Windows / macOS / Linux)
 
-We'd love help with:
+## 🙏 เครดิต
 
-- Adapting BOM AI for other languages/regions — the pattern generalizes
-- Thai instruction datasets for model training
-- Installer improvements (Windows / macOS / Linux)
+พัฒนาโดย [iCafeFX](https://icafefx.ai) · [SiamCafe](https://siamcafe.net)
 
-## Credits
+- [Ollama](https://ollama.com) — ตัวรันโมเดล
+- [Open WebUI](https://openwebui.com) — หน้าจอสนทนา
+- [DavidAU](https://huggingface.co/DavidAU) — สถาปัตยกรรม base model
+- Free code signing โดย [SignPath.io](https://signpath.io), certificate by SignPath Foundation
 
-Built by [iCafeFX](https://icafefx.ai) · [SiamCafe](https://siamcafe.net) ·
-Powered by [Ollama](https://ollama.com) and [Open WebUI](https://openwebui.com)
+## 📜 ลิขสิทธิ์
 
-## License
+- โค้ดใน repo นี้: **MIT** — ดู [LICENSE](LICENSE)
+- น้ำหนักโมเดล: **Apache 2.0** · Open WebUI: BSD-3-Clause
 
-MIT — see [LICENSE](LICENSE). Open WebUI keeps its own BSD-3-Clause license;
-model base licenses apply to their respective weights.
+---
 
-Free code signing provided by SignPath.io, certificate by SignPath Foundation
+<p align="center"><b>แจกฟรี สำหรับมนุษยชาติ 🇹🇭</b><br>
+ถ้าโปรเจกต์นี้มีประโยชน์กับคุณ กด ⭐ Star ไว้หน่อยก็ดีใจมาก<br>
+BOM AI · Heal the World · bomai.app</p>

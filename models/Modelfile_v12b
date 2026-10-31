@@ -21,6 +21,8 @@ PARAMETER temperature 0.6
 PARAMETER top_p 0.95
 PARAMETER top_k 20
 PARAMETER repeat_penalty 1.0
+# GOD CONFIG v7.0 (IRON 12): presence_penalty MUST stay 0 - nonzero = Han (Chinese) leak
+PARAMETER presence_penalty 0
 PARAMETER num_batch 128
 
 # Structural think-leak fix (D1 lesson): qwen3.5 RENDERER/PARSER pair makes

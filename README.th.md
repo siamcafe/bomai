@@ -3,7 +3,7 @@
 > **แจกฟรี สำหรับมนุษยชาติ** — ส่วนหนึ่งของภารกิจ *Heal the World*
 > ข้อมูลของคุณ **ไม่ถูกส่งออกนอกเครื่อง** ไม่ต้องจ่ายเงิน ไม่ต้องสมัครสมาชิก ไม่ต้องมีเน็ต
 
-[เว็บไซต์ bomai.app](https://bomai.app) · [ดาวน์โหลดฟรี](https://bomai.app/download) · [English](README.md)
+[เว็บไซต์ bomai.app](https://bomai.app) · [ดาวน์โหลดฟรี](https://bomai.app/download) · [English](README.en.md)
 
 ---
 
