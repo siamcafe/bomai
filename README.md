@@ -150,3 +150,15 @@ ollama run siamcafe/bomai-r75-highiq-safety:v1
 <p align="center"><b>แจกฟรี สำหรับมนุษยชาติ 🇹🇭</b><br>
 ถ้าโปรเจกต์นี้มีประโยชน์กับคุณ กด ⭐ Star ไว้หน่อยก็ดีใจมาก<br>
 BOM AI · Heal the World · bomai.app</p>
+
+## Model Tiers (v1.0.0)
+
+| Tier | Model | Hardware | Download | Status |
+|------|-------|----------|----------|--------|
+| **Light** | DavidAU Qwen 4B (Q4_K_M) | 8 GB RAM (16 GB rec.), CPU-only OK | ~3.4 GB | available |
+| **Pro** | 12B (Q4_K_M, gemma3) | GPU 12 GB+ VRAM (16 GB rec.) + 16 GB RAM | ~7.9 GB | available |
+| **Production** | 709-L 27B | Mac + MLX | ~21 GB | deferred - not public yet |
+
+- Windows installer: `https://bomai.app/dl/Install-BOM-AI-Online.bat` - asks for the tier, detects GPU/VRAM via nvidia-smi, recommends Light or Pro
+- Ollama registry: `siamcafe/bom-ai:light-v1.0.0` and `siamcafe/bom-ai:pro-v1.0.0` (`latest` stays Light)
+- Both tiers share the identical locked GOD CONFIG (7 parameters + Thai system prompt); only the base model differs
