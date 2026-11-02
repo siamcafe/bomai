@@ -2,112 +2,107 @@
 
 ![BOM AI](docs/images/banner.png)
 
-> Free, offline AI assistant for Thailand. One-click install. No cloud, no account, no telemetry.
+> Free Thai-first AI assistant that runs on your own computer. Local inference via [Ollama](https://ollama.com) + [Open WebUI](https://openwebui.com).
 
 [bomai.app](https://bomai.app) · [Download](https://bomai.app/download) · [ภาษาไทย](README.th.md)
 
-## What is BOM AI?
+## Read this first (honest disclosure)
 
-- One-click installer: bundles [Ollama](https://ollama.com) + [Open WebUI](https://openwebui.com) + curated Thai VL (vision-language) models
-- Runs 100% offline after install
-- Free forever: no signup, no ads, no message limits, no data collection
-- Reads Thai text in images: receipts, slips, signs, documents, screenshots
-- "Heal the World" mission: free AI education for Thai communities — classes for schools and institutions, no charge
+- BOM AI uses **small local models** and can produce incorrect, incomplete, repetitive, or OCR results. Verify important information.
+- **Chat runs locally** with no internet needed while chatting, but **installation** and **web search** use the internet, and web search sends your queries to external search services.
+- The app shows an **XM partner banner** that loads creatives remotely.
+- The safety gateway blocks defined phishing requests, but no rule-based filter can guarantee detection of every harmful prompt or output.
+- Installers are **unsigned** — Windows SmartScreen and macOS Gatekeeper may warn (the download page explains how to proceed).
+- The installer creates a **local admin account** on your machine (public signup is disabled; you log in with that account).
+- "Heal the World" mission: free AI education for Thai communities.
 
-Most AI in Thailand is cloud-only and English-first. Rural and older users on old
-hardware and metered connections get locked out. We wanted an AI that just works
-on an 8 GB office PC with the internet unplugged.
+## Model Tiers (v2.0.0)
 
-## Model Tiers
+| Tier | Download | Requirement | Best for |
+|------|----------|-------------|----------|
+| **Light 4.2B** ⭐ | ~3.4 GB | 8 GB RAM | Any PC without GPU — recommended for most users |
+| **Pro 11.8B** | ~7.9 GB | GPU 12 GB+ VRAM | Machines with a GPU — deeper answers |
+| Production | — | — | Deferred (not shipped in this version) |
 
-| Tier | RAM | Download | Capabilities |
-|------|-----|----------|--------------|
-| V4B | 8 GB | ~2.5 GB | Thai chat, image reading, Q&A, short translation |
-| V8B | 16 GB | ~5 GB | Everything V4B + document translation, longer documents |
-| V12B | 24 GB+ | ~7.3 GB | Full capability: charts, tables, complex vision tasks |
-
-The installer detects your RAM + VRAM and recommends the right tier automatically.
-You can always override the choice.
+Registry (Ollama): `siamcafe/bom-ai:light-v2.0.0` · `siamcafe/bom-ai:pro-v2.0.0` (v1.0.0 tags remain; same weights).
 
 ## Quick Start
 
-1. Download from [bomai.app/download](https://bomai.app/download)
-2. Run the installer — it detects your hardware and picks the right model
-3. Click the **BOM AI** icon — a chat window opens in your browser, in Thai
+### Windows
+1. Download `Install-BOM-AI-Online.bat` (~0.3 MB) from [bomai.app/download](https://bomai.app/download)
+2. Double-click it — the installer fetches required components (~3 GB+)
+3. If SmartScreen warns: "More info" → "Run anyway"
 
-Everything binds to `127.0.0.1` only (UI on port 8787, Ollama on port 11434).
-Nothing listens on the network.
+### macOS
+1. Download `install-bom-ai-mac.zip` from [bomai.app/download](https://bomai.app/download)
+2. Unzip it in Finder
+3. Double-click `install-bom-ai-mac.command` (if Gatekeeper warns: right-click → Open)
+
+### Linux
+```bash
+curl --fail --location --proto '=https' -o install-bom-ai-linux.sh \
+  https://bomai.app/dl/install-bom-ai-linux.sh
+bash install-bom-ai-linux.sh
+```
+
+SHA-256 hashes for every file are always available at [bomai.app/download](https://bomai.app/download) and in `/dl/release.json`.
 
 ## System Requirements
 
 - Windows 10 (1903)+, macOS 12+, or Ubuntu 22.04+
-- Minimum 8 GB RAM (V4B); 16 GB recommended (V8B)
-- ~10 GB free disk space
-- No internet needed after install
+- Light: 8 GB RAM · Pro: GPU with 12 GB+ VRAM
+- ~10-40 GB free disk space depending on tier
+- Internet required for installation (and for web search while using it)
 
 ## How It Works
 
-- **VL models**: QLoRA fine-tunes (r64 / alpha 128, bf16) of open vision-language
-  base models on Thai instruction data, exported to GGUF and served by Ollama
-- **Vision**: the models read Thai text inside images — receipts, signs,
-  screenshots, charts
-- **Hardware detection**: a small per-OS script probes RAM + VRAM and maps it to
-  a model tier before anything downloads (see `installer/`)
-- **Stack**: [Ollama](https://ollama.com) (model serving) + [Open WebUI](https://openwebui.com)
-  (chat interface, BSD-3-Clause) + our installer scripts and configs (this repo)
+- **Local stack**: [Ollama](https://ollama.com) serves the model; [Open WebUI](https://openwebui.com) provides the chat UI; everything binds to loopback only.
+- **Vision**: the models read Thai text inside images — receipts, signs, screenshots, charts (OCR can still misread).
+- **Web search**: optional, powered by a local SearXNG instance; queries go to public search providers while enabled.
+- **Thinking toggle**: OFF (default) answers in a single pass; ON allows one quality rewrite pass for better answers (longer wait; the model's reasoning is never exposed).
+- **GOD CONFIG v7.0 (locked)**: temperature 0.6, top_p 0.95, top_k 20, repeat_penalty 1.0, presence_penalty 0.0, num_ctx 8192, num_predict 4096. `think=false` is a request-level field enforced by the gateway on every upstream call — not a Modelfile parameter.
+
+## QC Status
+
+Current status: **candidate / HOLD** — the 312-case browser suite (52 prompts × Light/Pro × 3 OS) is being re-run on the final v2.0.0 bytes.
+Final QC numbers will be published here only when that run completes. We do not claim unfinished results.
+
+Known limitations, stated plainly: small models can get facts wrong (e.g., history); long list answers can loop (the guard stops loops, but a stopped answer is incomplete); OCR can misread characters.
 
 ## FAQ
 
 **Is it really free?**
-Yes — 100%. No subscription, no ads, no data selling, no credit card, no usage
-cap. BOM AI is a free project so every Thai user can have a personal AI.
-
-**Is it safe?**
-Everything runs on your own computer. Chats, images, and files never leave the
-machine, and there is no account to breach. Windows SmartScreen may warn because
-the binary is new — the download page lists SHA-256 hashes so you can verify
-what you downloaded.
+Yes — no subscription and no usage cap. The app displays an XM partner banner.
 
 **Does it need internet?**
-Only for the initial download and install. After that, BOM AI works fully offline.
+For installation and updates, yes. Chat itself runs locally; web search (optional) uses the internet and sends your query to search providers.
+
+**Is it safe?**
+Everything runs on your own computer and binds to loopback. The installer creates a local admin account — public signup is disabled. Safety filters block defined phishing requests, but no filter is perfect. Installers are unsigned; verify SHA-256 hashes from the download page.
+
+**Where does my chat data go?**
+Chats and images stay on your computer. Web search queries are sent to external services while that feature is in use, and the partner banner loads from a remote server.
 
 **Does it run on old computers?**
-Yes. Any Windows/macOS/Linux machine with 8 GB RAM runs the V4B model; 16 GB
-suits V8B; 24 GB+ gets V12B.
+Any 8 GB RAM machine runs Light. Pro needs a 12 GB+ VRAM GPU.
 
-**Can I use it on mobile?**
+**Mobile?**
 Not in this version — BOM AI is designed for desktop computers.
-
-**How is it different from ChatGPT?**
-ChatGPT runs on a company's servers and needs an account plus constant internet.
-BOM AI runs on your own machine: no signup, works offline, free and unlimited,
-and your data never leaves the computer. The trade-off: smaller models that are
-not GPT-4 level — but enough for everyday Thai work, and far more private.
-
-**Where does my data go?**
-Nowhere. All chats and images are stored only on your computer, and you can
-delete them at any time.
 
 ## Release Notes
 
-### v0.3.2 (2026-10-30)
+### v2.0.0 (2026-11) — Final Close
+- One canonical version **2.0.0** across website, installers, registry, manual
+- Clear tiers: **Light 4.2B** and **Pro 11.8B** (Production deferred)
+- Thinking toggle (bounded two-pass) — better answers when ON, no reasoning exposure
+- macOS distribution switched to ZIP + `.command` (the `.sh` script is retired)
+- Honest copy: local chat, internet for install/search, partner banner present, installers unsigned
 
-- 🎯 **Official Release** — Promoted from v0.3.1-rc.1 to stable v0.3.2
-- ✅ **All 6 Ship Gates PASSED** — Vision, Identity, Zero-Han (250/250=0), Thai≥9.0, Refusal, Regression
-- 🔒 **Zero-Han Solution** — GBNF grammar allowlist eliminates all CJK character leakage
-- 👁️ **Vision (VL) Verified** — Qwen3.5-4B multimodal inference confirmed working
-- 🤖 **Identity Correct** — Model responds as "BOM" with proper Thai identity
-- ⚙️ **GOD CONFIG v7.0** — Production inference parameters locked and deployed fleet-wide
-- 🧹 **Fleet Optimization** — 210 GiB disk reclaimed, 10 orphan models removed, 15 Docker images pruned
-- 🖼️ **ComfyUI Fleet v0.43.0** — All 7 instances upgraded and verified
+### v2.0.0 (2026-11-02) — Fleet Sync
+- Infrastructure sync with BOM LLM v10.0.0 (Open WebUI v0.12.5)
 
-Model details: base `DavidAU/Qwen3.5-4B-Claude-4.6-HighIQ-THINKING`, Q4_K_M GGUF
-(~3.4 GB), Qwen3-VL architecture, 3 rounds SFT + repair (PhaseA 465 steps,
-repair_r2 157, repair_r3 162). Model weights: Apache 2.0 · Code in this repo: MIT.
-
-### v0.3.1-rc.1 (2026-10-28)
-
-- First release candidate of the Thai VL model line.
+### Earlier
+- v0.3.2 (2026-10-30) / v0.3.1-rc.1 (2026-10-28) — earlier Thai VL line (retired). Some claims published at that time (code signing, zero-Han perfection, QC 20/20) were not accurate and are retracted.
 
 ## Contributing
 
@@ -126,5 +121,3 @@ Powered by [Ollama](https://ollama.com) and [Open WebUI](https://openwebui.com)
 
 MIT — see [LICENSE](LICENSE). Open WebUI keeps its own BSD-3-Clause license;
 model base licenses apply to their respective weights.
-
-Free code signing provided by SignPath.io, certificate by SignPath Foundation

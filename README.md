@@ -1,135 +1,107 @@
-# 🤖 BOM AI — ผู้ช่วย AI ภาษาไทย ฟรี 100% ทำงานบนเครื่องคุณเอง
+# 🤖 BOM AI — ผู้ช่วย AI ภาษาไทย ทำงานบนเครื่องของคุณ
 
 ![BOM AI Hero Banner](docs/images/hero_banner_wide.png)
 
-> **"แจกฟรี สำหรับมนุษยชาติ"** — ติดตั้งคลิกเดียว ใช้ได้ทันที ข้อมูลไม่ถูกส่งออกนอกเครื่อง
+> **"แจกฟรี สำหรับมนุษยชาติ"** — โมเดลทำงานในเครื่องของคุณ (local) · ตอบเป็นภาษาไทยเป็นหลัก
 > ส่วนหนึ่งของภารกิจ *Heal the World* — AI ฟรีเพื่อการศึกษาสำหรับคนไทยทุกคน
 
 [เว็บไซต์ bomai.app](https://bomai.app) · [ดาวน์โหลด](https://bomai.app/download) · [คู่มือฉบับเต็ม](README.th.md) · [English](README.en.md)
 
 [![Download](https://img.shields.io/badge/download-bomai.app-blue)](https://bomai.app/download) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE) ![Version](https://img.shields.io/badge/version-v2.0.0-orange)
 
+## ⚠️ ข้อควรรู้ก่อนใช้ (ซื่อสัตย์ ไม่ซ่อน)
+
+- BOM AI ใช้**โมเดลขนาดเล็กในเครื่อง** อาจให้ข้อมูลผิด คำตอบไม่ครบ วนซ้ำ หรืออ่านภาพคลาดเคลื่อนได้ — โปรดตรวจสอบข้อมูลสำคัญเสมอ
+- **แชททำงานในเครื่อง** ไม่ต้องต่อเน็ตขณะคุย แต่**การติดตั้ง**และ**การค้นเว็บ**ใช้อินเทอร์เน็ต และการค้นเว็บจะส่งคำค้นของคุณไปยังบริการค้นหาภายนอก
+- ในแอปมี**แบนเนอร์พาร์ตเนอร์ XM** ซึ่งโหลดรูปจากภายนอก
+- ตัวกรองความปลอดภัยช่วยปฏิเสธคำขอฟิชชิงตามกฎที่กำหนด แต่ไม่มีตัวกรองแบบกฎใดรับประกันได้ 100%
+- ตัวติดตั้ง**ไม่ได้ผ่านการ sign** — Windows อาจแสดง SmartScreen และ macOS อาจแสดง Gatekeeper (ดูวิธีเปิดในคู่มือ)
+- การติดตั้งจะสร้าง**บัญชีผู้ดูแลในเครื่อง**ของคุณ (ปิดการสมัครสาธารณะ ต้องล็อกอินก่อนใช้)
+
 ## ✨ ความสามารถ
 
-- 🇹🇭 **ภาษาไทยเป็นหลัก 100%** — ถาม-ตอบ อ่าน เขียน แปล ภาษาไทยได้เป็นธรรมชาติ ผ่านการทดสอบ Thai gate ≥ 9.0
-- 🔒 **ทำงานบนเครื่องคุณ 100%** — ทุกอย่างรันที่ local (127.0.0.1) แชทและรูปภาพไม่ถูกส่งออกนอกเครื่องแม้แต่ไบต์เดียว
-- 🖼️ **อ่านข้อความในภาพ (Vision/OCR)** — ถ่ายใบเสร็จ สลิป ป้ายหน้าร้าน เอกสาร แล้วถามได้ทันที
-- ⚡ **ติดตั้ง 1 คลิก** — Windows / macOS / Linux ตัวติดตั้งตรวจสเปกเครื่องแล้วเลือกโมเดลที่เหมาะสมให้อัตโนมัติ
-- 🚫 **ออฟไลน์ได้เต็มรูปแบบ** — ใช้เน็ตเฉพาะตอนติดตั้งครั้งแรก หลังจากนั้นตัดเน็ตก็คุยได้
-- 💚 **ฟรีไม่มีเงื่อนไข** — ไม่ต้องสมัครสมาชิก ไม่มีโฆษณา ไม่จำกัดจำนวนข้อความ ไม่มีการเก็บ/ขายข้อมูล
+- 🇹🇭 **ตอบเป็นภาษาไทยเป็นหลัก** — ถาม-ตอบ อ่าน เขียน แปล
+- 🖼️ **อ่านข้อความในภาพ (Vision/OCR)** — ใบเสร็จ สลิป เอกสาร ป้าย (ระวัง: งาน OCR อาจคลาดเคลื่อน)
+- 🔍 **ค้นเว็บ** — ต่ออินเทอร์เน็ตเพื่อดึงข้อมูลล่าสุดพร้อมแหล่งอ้างอิง
+- 🧠 **ปุ่ม Thinking** — ปิด (ค่าเริ่มต้น) ตอบเร็วในรอบเดียว; เปิดเพื่อให้ระบบพิจารณาสร้างคำตอบใหม่อีกหนึ่งรอบเพื่อคุณภาพ (รอนานขึ้น ไม่เปิดเผยแนวคิดของโมเดล)
+- ⚡ **ติดตั้งง่าย** — ตัวติดตั้งตรวจสเปกเครื่องแล้วแนะนำรุ่นที่เหมาะสม
 
-## 📊 ผลทดสอบจริง (Benchmark)
+## 🤖 รุ่นโมเดล (v2.0.0)
 
-**ระบบผลิต (Production pipeline) — ตรวจสอบโดย QC20, GOD CONFIG v7.0:**
+| รุ่น | ขนาดดาวน์โหลด | ความต้องการ | เหมาะกับ |
+|---|---|---|---|
+| **Light 4.2B** ⭐ | ~3.4 GB | RAM 8 GB+ | เครื่องทั่วไป ไม่มี GPU — แนะนำสำหรับคนส่วนใหญ่ |
+| **Pro 11.8B** | ~7.9 GB | GPU 12 GB+ VRAM | เครื่องมี GPU คำตอบลึกกว่า |
+| Production | — | — | เลื่อนออก (ยังไม่เปิดให้ใช้ในเวอร์ชันนี้) |
 
-| ตัวชี้วัด | ค่าที่วัดได้จริง |
-|---|---|
-| ⚡ TTFT (เวลาตอบตัวอักษรแรก) | **2.29 วินาที** |
-| 🔍 Web search แบบ end-to-end | **19.21 วินาที** |
-| 📀 Cache hit TTFT | **0.062 วินาที** |
-| 🏃 ความเร็วสร้างคำตอบ | **22.4 tokens/วินาที** |
-| 🇹🇭 คุณภาพภาษาไทย QC20 | **20/20 PASS** |
-| 🎯 การรั่วของอักษรจีน (Han leak) | **0 ตัวอักษร** |
+Registry (Ollama): `siamcafe/bom-ai:light-v2.0.0` · `siamcafe/bom-ai:pro-v2.0.0` (แท็ก v1.0.0 ยังคงอยู่ น้ำหนักโมเดลชุดเดิม)
 
-**โมเดล BOM AI v0.3.2 — ผ่านประตูคุณภาพทั้ง 6 ด่าน (Ship Gates 6/6 PASS):**
+## 🚀 ติดตั้ง
 
-| ด่านตรวจ | ผลลัพธ์ |
-|---|---|
-| Zero-Han (อักษรจีนรั่ว) | **250/250 บันทึก = 0 อักษรจีน** |
-| คุณภาพภาษาไทย | **≥ 9.0** |
-| Vision (อ่านภาพ) | ✅ PASS |
-| ตัวตน/Identity | ✅ PASS (ตอบว่าเป็น "BOM") |
-| การปฏิเสธงานที่ควรทำได้ (Refusal) | ✅ PASS |
-| Regression | ✅ PASS |
-
-## 🚀 ติดตั้ง 1 คลิก
-
-### Windows (PowerShell)
-```powershell
-# ดาวน์โหลด 86KB แล้วตัวติดตั้งจะดึง component เอง (~3GB)
-Invoke-WebRequest -Uri "https://bomai.app/dl/Install-BOM-AI-Online.bat" -OutFile "Install-BOM-AI.bat"
-.\Install-BOM-AI.bat
-```
+### Windows
+1. ดาวน์โหลด `Install-BOM-AI-Online.bat` (~0.3 MB) จาก [bomai.app/download](https://bomai.app/download)
+2. ดับเบิลคลิกไฟล์ — ตัวติดตั้งจะดึงส่วนประกอบที่จำเป็นเอง (~3 GB+)
+3. ถ้า SmartScreen เตือน: คลิก "ข้อมูลเพิ่มเติม" → "เรียกใช้ต่อไป"
 
 ### macOS
-```bash
-curl -fsSL https://bomai.app/dl/install-bom-ai-mac.sh | bash
-```
+1. ดาวน์โหลด `install-bom-ai-mac.zip` จาก [bomai.app/download](https://bomai.app/download)
+2. แตกไฟล์ ZIP ใน Finder
+3. ดับเบิลคลิก `install-bom-ai-mac.command` (ถ้า Gatekeeper เตือน: คลิกขวา → เปิด)
 
 ### Linux
 ```bash
-curl -fsSL https://bomai.app/dl/install-bom-ai-linux.sh | bash
+curl --fail --location --proto '=https' -o install-bom-ai-linux.sh \
+  https://bomai.app/dl/install-bom-ai-linux.sh
+bash install-bom-ai-linux.sh
 ```
 
-หรือดาวน์โหลดตัวติดตั้งแบบสมบูรณ์จาก **[bomai.app/download](https://bomai.app/download)** (มี SHA-256 ให้ตรวจสอบทุกไฟล์)
-
-## 🤖 เลือกโมเดลตามสเปกเครื่อง
-
-| ระดับ | RAM | ดาวน์โหลด | เหมาะกับ |
-|---|---|---|---|
-| **V4B** | 8 GB+ | ~2.5 GB | แชทไทย อ่านภาพ ถาม-ตอบ งานสั้น |
-| **V8B** | 16 GB+ | ~5.0 GB | งานเอกสารยาว แปลไทย-อังกฤษเต็มรูปแบบ |
-| **V12B** | 24 GB+ | ~7.3 GB | คุณภาพสูงสุด ตาราง แผนภูมิ งาน Vision ซับซ้อน |
-
-ตัวติดตั้งตรวจ RAM + VRAM ให้เอง แล้วแนะนำระดับที่เหมาะกับเครื่อง — แก้ไขเองได้เสมอ
+ดาวน์โหลดพร้อมค่า SHA-256 ทุกไฟล์ได้ที่ **[bomai.app/download](https://bomai.app/download)** · ค่า SHA-256 ที่ถูกต้องอยู่ใน `/dl/release.json` เสมอ
 
 ## 🔧 GOD CONFIG v7.0 (LOCKED)
 
-พารามิเตอร์ระดับโปรดักชันที่ผ่านการ QC จนนิ่ง ห้ามเปลี่ยน:
+พารามิเตอร์ระดับโปรดักชัน 7 ค่า ล็อกไว้ ห้ามเปลี่ยน:
 
-| พารามิเตอร์ | ค่า | เหตุผล |
-|---|---|---|
-| temperature | **0.6** | เกิน 0.7 = คุณภาพภาษาไทยตก |
-| top_p | **0.95** | สมดุลความหลากหลายของคำ |
-| top_k | **20** | โฟกัสคลังคำศัพท์ |
-| repeat_penalty | **1.0** | ≠1.0 = มีโอกาสรั่วภาษาจีน |
-| presence_penalty | **0.0** | ⛔ เหล็กใน — ค่าอื่นที่ไม่ใช่ 0 = อักษรจีนรั่ว |
-| num_ctx | **8192** | เหมาะกับภาษาไทย (ตัวติดตั้งปรับตามระดับ RAM: 4096/8192) |
-| num_predict | **4096** | คำตอบครบถ้วน |
-| think | **false** | กัน code-switch ภาษา |
+| พารามิเตอร์ | ค่า |
+|---|---|
+| temperature | **0.6** |
+| top_p | **0.95** |
+| top_k | **20** |
+| repeat_penalty | **1.0** |
+| presence_penalty | **0.0** |
+| num_ctx | **8192** |
+| num_predict | **4096** |
 
-## 📸 หน้าจอโปรแกรม
+`think=false` เป็น**ฟิลด์ระดับคำขอ (request-level)** ที่เกตเวย์แนบไปกับทุกคำขอไปยัง Ollama — ไม่ใช่ PARAMETER ใน Modelfile และระบบไม่เปิดเผยข้อความให้เหตุผล (reasoning) ของโมเดล
 
-| หน้าแรก | แชทภาษาไทย | แชทภาษาอังกฤษ | ตั้งค่า |
-|---|---|---|---|
-| ![หน้าแรก](docs/images/screenshots/01_home.png) | ![แชทไทย](docs/images/screenshots/02_chat_thai.png) | ![แชทอังกฤษ](docs/images/screenshots/03_chat_english.png) | ![ตั้งค่า](docs/images/screenshots/04_settings.png) |
+SYSTEM prompt เป็นภาษาไทย 3 บรรทัด (ล็อกตามสเปก)
 
-## 🏆 รายละเอียดโมเดล
+## 📊 สถานะการตรวจสอบคุณภาพ (QC)
 
-- **Base model:** [DavidAU/Qwen3.5-4B-Claude-4.6-HighIQ-THINKING](https://huggingface.co/DavidAU/Qwen3.5-4B-Claude-4.6-HighIQ-THINKING)
-- **สถาปัตยกรรม:** Qwen3-VL (vision-language) · ควอนไทซ์ GGUF **Q4_K_M** (~3.4 GB)
-- **การเทรน:** QLoRA fine-tune (r=64, alpha=128, bf16) 3 รอบ SFT + repair (PhaseA 465 steps, repair_r2 157, repair_r3 162) บนข้อมูลสอนภาษาไทย + **GBNF zero-Han grammar** ตัดอักษรจีนรั่วได้ 100%
-- **Zero-Han:** ✅ 250/250 บันทึกทดสอบ = 0 อักษรจีน
-- **ดาวน์โหลดโมเดลจาก Hugging Face:** [siamcafe/bomai-r75-highiq-safety](https://huggingface.co/siamcafe/bomai-r75-highiq-safety)
+สถานะปัจจุบัน: **candidate / HOLD** — ชุดตรวจ 312 เคส (52 คำถาม × Light/Pro × 3 ระบบปฏิบัติการ) กำลังตรวจซ้ำบนไบต์ไฟนัลของ v2.0.0
+ตัวเลขผล QC ฉบับสมบูรณ์จะประกาศที่นี่เมื่อการตรวจเสร็จสิ้นเท่านั้น — เราไม่อ้างผลที่ยังตรวจไม่จบ
 
-```bash
-ollama pull siamcafe/bomai-r75-highiq-safety:v1
-ollama run siamcafe/bomai-r75-highiq-safety:v1
-```
+ข้อจำกัดที่ทราบและไม่ปิดบัง: โมเดลขนาดเล็กอาจตอบข้อเท็จจริงผิด (เช่น ประวัติศาสตร์), งานรายการยาวอาจวนซ้ำ (มีตัวหยุดการวนซ้ำ แต่คำตอบที่ถูกหยุดถือว่าไม่สมบูรณ์), OCR อาจมีตัวอักษรคลาดเคลื่อน
 
 ## 📖 คู่มือการใช้งาน
 
 - คู่มือฉบับเต็มภาษาไทย: [README.th.md](README.th.md) · [siamcafebook.com/bomai/manual](https://siamcafebook.com/bomai/manual/)
-- คำถามที่พบบ่อย วิธีถอนการติดตั้ง และเทคนิคการใช้งาน อยู่ในคู่มือ
+- [English](README.en.md)
 
 ## 🗒️ บันทึกการอัปเดต
 
-### v2.0.0 (2026-11-02)
-- 🚀 **Fleet Sync Update** — ซิงก์โครงสร้างพื้นฐานกับ BOM LLM v10.0.0
-- ⬆️ BOM LLM fleet อัปเกรด Open WebUI v0.12.5
-- ✅ GOD CONFIG v7.0 ตรวจสอบผ่าน (40 IRON rules)
-- ✅ Fleet 9/9 ผ่านการตรวจสอบ, Pipeline E2E PASS
-- 🖼️ อัปเดต Hero banner ใหม่
+### v2.0.0 (2026-11) — Final Close
+- รวมเวอร์ชันเป็น **2.0.0 ทั้งหมด** (เว็บไซต์ / ตัวติดตั้ง / registry / คู่มือ)
+- รุ่นโมเดลชัดเจน: **Light 4.2B** และ **Pro 11.8B** (Production เลื่อนออก)
+- ปุ่ม Thinking (two-pass) — คุณภาพดีขึ้นเมื่อเปิด โดยไม่เปิด reasoning
+- macOS เปลี่ยนเป็น ZIP + `.command` (เลิกใช้สคริปต์ .sh)
+- แก้ข้อความให้ตรงความจริง: แชทในเครื่อง แต่ติดตั้ง/ค้นเว็บใช้เน็ต, มีแบนเนอร์พาร์ตเนอร์, ตัวติดตั้งไม่ได้ sign
 
-### v0.3.2 (2026-10-30)
-- 🎯 **Official Release** — เลื่อนจาก v0.3.1-rc.1 เป็น stable v0.3.2
-- ✅ ผ่าน Ship Gates ทั้ง 6 ด่าน — Vision, Identity, Zero-Han (250/250=0), Thai≥9.0, Refusal, Regression
-- 🔒 **Zero-Han Solution** — GBNF grammar allowlist ตัดการรั่วของอักษร CJK ทั้งหมด
-- 👁️ Vision (VL) ยืนยันการใช้งานจริง — Qwen3.5-4B multimodal
-- ⚙️ **GOD CONFIG v7.0** — พารามิเตอร์ระดับโปรดักชันล็อกแล้ว ใช้ทั่วทั้ง fleet
+### v2.0.0 (2026-11-02) — Fleet Sync
+- ซิงก์โครงสร้างพื้นฐานกับ BOM LLM v10.0.0 (Open WebUI v0.12.5)
+- GOD CONFIG v7.0 ไม่เปลี่ยนแปลง
 
-### v0.3.1-rc.1 (2026-10-28)
-- Release candidate แรกของสายโมเดล Thai VL
+### รุ่นก่อนหน้า
+- v0.3.2 (2026-10-30) / v0.3.1-rc.1 (2026-10-28) — รุ่นเก่าของสายโมเดล Thai VL (ยุติแล้ว)
 
 ## 🤝 ร่วมพัฒนา
 
@@ -144,28 +116,4 @@ ollama run siamcafe/bomai-r75-highiq-safety:v1
 
 - [Ollama](https://ollama.com) — ตัวรันโมเดล
 - [Open WebUI](https://openwebui.com) — หน้าจอสนทนา
-- [DavidAU](https://huggingface.co/DavidAU) — สถาปัตยกรรม base model
-- Free code signing โดย [SignPath.io](https://signpath.io), certificate by SignPath Foundation
-
-## 📜 ลิขสิทธิ์
-
-- โค้ดใน repo นี้: **MIT** — ดู [LICENSE](LICENSE)
-- น้ำหนักโมเดล: **Apache 2.0** · Open WebUI: BSD-3-Clause
-
----
-
-<p align="center"><b>แจกฟรี สำหรับมนุษยชาติ 🇹🇭</b><br>
-ถ้าโปรเจกต์นี้มีประโยชน์กับคุณ กด ⭐ Star ไว้หน่อยก็ดีใจมาก<br>
-BOM AI · Heal the World · bomai.app</p>
-
-## Model Tiers (v2.0.0)
-
-| Tier | Model | Hardware | Download | Status |
-|------|-------|----------|----------|--------|
-| **Light** | DavidAU Qwen 4B (Q4_K_M) | 8 GB RAM (16 GB rec.), CPU-only OK | ~3.4 GB | available |
-| **Pro** | 12B (Q4_K_M, gemma3) | GPU 12 GB+ VRAM (16 GB rec.) + 16 GB RAM | ~7.9 GB | available |
-| **Production** | 709-L 27B | Mac + MLX | ~21 GB | deferred - not public yet |
-
-- Windows installer: `https://bomai.app/dl/Install-BOM-AI-Online.bat` - asks for the tier, detects GPU/VRAM via nvidia-smi, recommends Light or Pro
-- Ollama registry: `siamcafe/bom-ai:light-v2.0.0` and `siamcafe/bom-ai:pro-v2.0.0` (`latest` stays Light)
-- Both tiers share the identical locked GOD CONFIG (7 parameters + Thai system prompt); only the base model differs
+- ตัวติดตั้งไม่ได้รับการเซ็นโค้ด (unsigned) — คำกล่าวอ้างเรื่อง code signing ในรุ่นก่อนไม่เป็นความจริง ขออภัย
