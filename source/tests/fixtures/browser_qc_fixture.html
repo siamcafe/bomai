@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="th">
+<head><meta charset="utf-8"><title>BOM AI QC fixture</title></head>
+<body>
+<div id="app" style="display:none">
+  <button data-testid="new-chat-button" onclick="newChat()">New Chat</button>
+  <button data-testid="model-selector-button">bomai-qc-light</button>
+  <div id="chat">
+    <div id="messages"></div>
+    <button id="stop-response-button" style="display:none">&#9632;</button>
+    <div id="sources" style="display:none">
+      <button class="source-button">example.com/gold-price</button>
+      <button class="source-button">news.example.th</button>
+    </div>
+  </div>
+  <textarea id="chat-input" rows="3"></textarea>
+  <input type="file" id="file-input" style="display:none" onchange="window.FIXTURE_ATTACHED=true">
+</div>
+<div id="auth">
+  <input id="email" type="email">
+  <input id="password" type="password">
+  <button type="submit" onclick="doLogin()">เข้าสู่ระบบ</button>
+</div>
+<script>
+window.FIXTURE_STREAM_MS = 900;
+window.FIXTURE_ATTACHED = false;
+function doLogin() {
+  document.getElementById('auth').style.display = 'none';
+  document.getElementById('app').style.display = '';
+  history.replaceState(null, '', '/');
+}
+function newChat() { document.getElementById('messages').innerHTML = ''; }
+document.addEventListener('DOMContentLoaded', function () {
+  var input = document.getElementById('chat-input');
+  input.addEventListener('keydown', function (ev) {
+    if (ev.key !== 'Enter' || ev.shiftKey) return;
+    ev.preventDefault();
+    var text = input.value.trim();
+    if (!text && !window.FIXTURE_ATTACHED) return; // UI rejects empty submission
+    input.value = '';
+    var msg = document.createElement('div');
+    msg.className = 'chat-assistant';
+    msg.setAttribute('data-testid', 'assistant-message');
+    document.getElementById('messages').appendChild(msg);
+    var stop = document.getElementById('stop-response-button');
+    stop.style.display = '';
+    var full = 'คำตอบจากฟิกซ์เจอร์: ' + text + ' ภาษาไทยชัดเจน จบอย่างสมบูรณ์';
+    var i = 0;
+    var timer = setInterval(function () {
+      i += 7;
+      msg.textContent = full.slice(0, i);
+      if (i >= full.length) {
+        clearInterval(timer);
+        stop.style.display = 'none';
+        document.getElementById('sources').style.display = '';
+      }
+    }, Math.max(30, window.FIXTURE_STREAM_MS / full.length * 7));
+  });
+});
+</script>
+</body>
+</html>
