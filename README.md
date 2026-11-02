@@ -7,7 +7,7 @@
 
 [เว็บไซต์ bomai.app](https://bomai.app) · [ดาวน์โหลด](https://bomai.app/download) · [คู่มือฉบับเต็ม](README.th.md) · [English](README.en.md)
 
-[![Download](https://img.shields.io/badge/download-bomai.app-blue)](https://bomai.app/download) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE) ![Version](https://img.shields.io/badge/version-v1.0.0-orange)
+[![Download](https://img.shields.io/badge/download-bomai.app-blue)](https://bomai.app/download) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE) ![Version](https://img.shields.io/badge/version-v2.0.0-orange)
 
 ## ✨ ความสามารถ
 
@@ -114,6 +114,13 @@ ollama run siamcafe/bomai-r75-highiq-safety:v1
 
 ## 🗒️ บันทึกการอัปเดต
 
+### v2.0.0 (2026-11-02)
+- 🚀 **Fleet Sync Update** — ซิงก์โครงสร้างพื้นฐานกับ BOM LLM v10.0.0
+- ⬆️ BOM LLM fleet อัปเกรด Open WebUI v0.12.5
+- ✅ GOD CONFIG v7.0 ตรวจสอบผ่าน (40 IRON rules)
+- ✅ Fleet 9/9 ผ่านการตรวจสอบ, Pipeline E2E PASS
+- 🖼️ อัปเดต Hero banner ใหม่
+
 ### v0.3.2 (2026-10-30)
 - 🎯 **Official Release** — เลื่อนจาก v0.3.1-rc.1 เป็น stable v0.3.2
 - ✅ ผ่าน Ship Gates ทั้ง 6 ด่าน — Vision, Identity, Zero-Han (250/250=0), Thai≥9.0, Refusal, Regression
@@ -151,7 +158,7 @@ ollama run siamcafe/bomai-r75-highiq-safety:v1
 ถ้าโปรเจกต์นี้มีประโยชน์กับคุณ กด ⭐ Star ไว้หน่อยก็ดีใจมาก<br>
 BOM AI · Heal the World · bomai.app</p>
 
-## Model Tiers (v1.0.0)
+## Model Tiers (v2.0.0)
 
 | Tier | Model | Hardware | Download | Status |
 |------|-------|----------|----------|--------|
@@ -160,5 +167,5 @@ BOM AI · Heal the World · bomai.app</p>
 | **Production** | 709-L 27B | Mac + MLX | ~21 GB | deferred - not public yet |
 
 - Windows installer: `https://bomai.app/dl/Install-BOM-AI-Online.bat` - asks for the tier, detects GPU/VRAM via nvidia-smi, recommends Light or Pro
-- Ollama registry: `siamcafe/bom-ai:light-v1.0.0` and `siamcafe/bom-ai:pro-v1.0.0` (`latest` stays Light)
+- Ollama registry: `siamcafe/bom-ai:light-v2.0.0` and `siamcafe/bom-ai:pro-v2.0.0` (`latest` stays Light)
 - Both tiers share the identical locked GOD CONFIG (7 parameters + Thai system prompt); only the base model differs
