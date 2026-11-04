@@ -7,7 +7,7 @@
 
 [เว็บไซต์ bomai.app](https://bomai.app) · [ดาวน์โหลด](https://bomai.app/download) · [คู่มือฉบับเต็ม](README.th.md) · [English](README.en.md)
 
-[![Download](https://img.shields.io/badge/download-bomai.app-blue)](https://bomai.app/download) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE) ![Version](https://img.shields.io/badge/version-v3.0.0-orange)
+[![Download](https://img.shields.io/badge/download-bomai.app-blue)](https://bomai.app/download) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE) ![Version](https://img.shields.io/badge/version-v4.0.0-orange)
 
 ## ✨ ความสามารถ
 
@@ -114,6 +114,13 @@ ollama run siamcafe/bomai-r75-highiq-safety:v1
 
 ## 🗒️ บันทึกการอัปเดต
 
+### v4.0.0 — Training Pipeline + Ship (2026-11-05)
+
+- **BOM AI v0.3.2 SHIPPED** — 6/6 Gates ALL PASS
+- **Base model** — Qwen3.5 4B Q4_K_M
+- **VL training pipeline** — LoRA config established, repair plan documented
+- **Documentation** — README updated for v4.0.0 release
+
 ### v3.0.0 (2026-11-04)
 - 🚀 **Shared Infrastructure Sync** — ซิงก์โครงสร้างพื้นฐานกับ BOM LLM v11.0.0 (Open WebUI v0.13.0 อินสแตนซ์ที่ใช้ร่วมกัน)
 - ⚡ แก้ประสิทธิภาพเซิร์ฟเวอร์ C2 — SSH guard แบบถาวร ตรวจสอบ LiteLLM DB จัดการ pollers (รายละเอียดใน BLUEPRINT.md)
@@ -164,7 +171,7 @@ ollama run siamcafe/bomai-r75-highiq-safety:v1
 ถ้าโปรเจกต์นี้มีประโยชน์กับคุณ กด ⭐ Star ไว้หน่อยก็ดีใจมาก<br>
 BOM AI · Heal the World · bomai.app</p>
 
-## Model Tiers (v3.0.0)
+## Model Tiers (v4.0.0)
 
 | Tier | Model | Hardware | Download | Status |
 |------|-------|----------|----------|--------|
