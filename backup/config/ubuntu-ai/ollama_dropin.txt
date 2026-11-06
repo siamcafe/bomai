@@ -1,0 +1,7 @@
+[Unit]
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+RestartSec=5
+Restart=on-failure

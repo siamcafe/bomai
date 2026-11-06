@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+"""BOM AI loopback inference API. Raw Ollama on 11434 remains diagnostic.
+
+This proxy suppresses tagged/structured reasoning when think=false; it does not
+claim to stop the model from computing reasoning or identify untagged reasoning.
+OpenAI chat requests are translated to native Ollama so all Config G options and
+the required runner are actually forwarded. No third-party Python dependency.
+"""
+from __future__ import annotations
+
+import argparse
+import base64
+import copy
+import hashlib
+import ipaddress
+import json
+import logging
+from logging.handlers import RotatingFileHandler
+import os
+import re
+import threading
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+import uuid
+from datetime import datetime, timezone
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from typing import Any
+
+CONFIG_G = dict(temperature=0.6, top_p=0.95, top_k=20,
+                repeat_penalty=1.0, num_ctx=8192, num_predict=4096)
+TAGS = ('think', 'thinking', 'reasoning', 'analysis')
+TAG_RE = re.compile(r'<\s*(/?)\s*(think|thinking|reasoning|analysis)\b[^>]*>', re.I)
+REASON_KEYS = {'thinking', 'reasoning', 'reasoning_content', 'analysis'}
+MAX_BODY = 32 * 1024 * 1024
+# BUG-032 bounded upstream bodies: 8 MiB per streamed record (one NDJSON line
+# is one frame) and 16 MiB for non-stream/error bodies (mirrors GPT patch
+# BUG-013_scripts_ollama_gateway.py.diff).
+MAX_STREAM_RECORD = 8 * 1024 * 1024
+MAX_UPSTREAM_BODY = 16 * 1024 * 1024
+# BUG-013 bounded admission: 16 HTTP handlers, 1 active inference, 8 queued.
+MAX_HANDLERS = 16
+MAX_INFERENCE = 1
+MAX_QUEUED = 8
+EMPTY_THINKING_RETRIES = 1  # bounded retry for thinking-only responses (D2 fix)
+
+
+def utc_now() -> str:

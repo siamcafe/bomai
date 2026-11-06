@@ -1,0 +1,48 @@
+# captured with: systemctl --user cat
+# system-level unit of this name was not installed
+# /home/bom/.config/systemd/user/bomai-ollama.service
+[Unit]
+Description=BOM AI Ollama (user)
+PartOf=bomai.target
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+[Service]
+Type=simple
+WorkingDirectory=/home/bom/BOM-AI
+EnvironmentFile=/home/bom/BOM-AI/config/ollama.env
+ExecStart="/home/bom/BOM-AI/runtime/ollama/bin/ollama" serve
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=150
+TimeoutStopSec=30
+KillMode=control-group
+UMask=0077
+NoNewPrivileges=yes
+StandardOutput=append:/home/bom/BOM-AI/logs/ollama.log
+StandardError=append:/home/bom/BOM-AI/logs/ollama.err.log
+
+[Install]
+WantedBy=default.target
+
+# /home/bom/.config/systemd/user/bomai-ollama.service.d/30-fleet.conf
+# Install as ~/.config/systemd/user/bomai-ollama.service.d/30-fleet.conf
+# EnvironmentFile is parsed by systemd; do not shell-source mac/ollama.env.
+[Service]
+EnvironmentFile=/ai/workspace/scripts/ubuntu-ai/ollama.env
+CPUQuota=800%
+MemoryHigh=24G
+MemoryMax=32G
+Restart=on-failure
+RestartSec=3
+
+# /home/bom/.config/systemd/user.control/bomai-ollama.service.d/50-MemorySwapMax.conf
+# This is a drop-in unit file extension, created via "systemctl set-property"
+# or an equivalent operation. Do not edit.
+[Service]
+MemorySwapMax=0
+
+# /home/bom/.config/systemd/user/bomai-ollama.service.d/v60.conf
+[Service]
+ExecStart=
+ExecStart=/home/bom/BOM-AI/runtime/ollama-v0.40.13/root/bin/ollama serve

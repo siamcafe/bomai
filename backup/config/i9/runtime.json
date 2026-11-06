@@ -1,0 +1,15 @@
+{
+    "tier":  "light",
+    "gateway_url":  "http://127.0.0.1:11435/v1",
+    "gateway_key":  "REDACTED",
+    "schema_version":  2,
+    "model_alias":  "bomai-safe",
+    "catalog":  "D:\\BOMAI\\releases\\2.0.2\\b20261106042726\\config\\models.json",
+    "gateway_port":  11435,
+    "registry_ref":  "siamcafe/bom-ai:light-v2.0.0",
+    "updated":  "2026-11-06T04:30:48",
+    "expected_version":  "0.40.13",
+    "searxng_url":  "http://127.0.0.1:8888/search?q=\u003cquery\u003e\u0026format=json",
+    "release":  "2.0.2",
+    "ollama_url":  "http://127.0.0.1:11434"
+}

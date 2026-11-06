@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "version": "2.0.3",
+  "release_channel": "stable",
+  "release_status": "READY",
+  "generated_at": "2026-11-06T06:15:51+00:00",
+  "han_fix": "HF-1.0",
+  "assets": {
+    "windows": {
+      "url": "https://bomai.app/dl/Install-BOM-AI-Online.bat",
+      "sha256": "88428a59580e02ef0ee3d6f10db2253faadef877b2864cb2e18a0fcdd84f8faa",
+      "size": 406263
+    },
+    "macos": {
+      "url": "https://bomai.app/dl/install-bom-ai-mac.zip",
+      "sha256": "70ff5dfa80bd7722eafbef41946089caf749bb0c698f8c876e3075b93a058e07",
+      "size": 87242
+    },
+    "linux": {
+      "url": "https://bomai.app/dl/install-bom-ai-linux.sh",
+      "sha256": "d27178cef858a4600af7697670620b859e8792339f8ae465412bdc99b8aefd42",
+      "size": 87090
+    }
+  },
+  "tiers": {
+    "light": {
+      "tag": "siamcafe/bom-ai:light-v2.0.0",
+      "available": true
+    },
+    "pro": {
+      "tag": "siamcafe/bom-ai:pro-v2.0.0",
+      "available": true
+    },
+    "production": {
+      "status": "deferred",
+      "available": false
+    }
+  },
+  "note": "Activated by P8 ship after P5 package + P6 3-OS install QC + P7 500+50 stress all PASS. 3-copy convention: bomai.app/dl/release.json, GitHub siamcafe/bomai v2.0.3 release, HuggingFace siamcafe/bomai release.json."
+}

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>HOME</key>
+		<string>/Users/bom</string>
+		<key>OLLAMA_CONTEXT_LENGTH</key>
+		<string>16384</string>
+		<key>OLLAMA_DEBUG</key>
+		<string>0</string>
+		<key>OLLAMA_FLASH_ATTENTION</key>
+		<string>1</string>
+		<key>OLLAMA_GPU_OVERHEAD</key>
+		<string>6442450944</string>
+		<key>OLLAMA_HOST</key>
+		<string>127.0.0.1:11434</string>
+		<key>OLLAMA_KEEP_ALIVE</key>
+		<string>-1</string>
+		<key>OLLAMA_KV_CACHE_TYPE</key>
+		<string>f16</string>
+		<key>OLLAMA_LOAD_TIMEOUT</key>
+		<string>5m</string>
+		<key>OLLAMA_MAX_LOADED_MODELS</key>
+		<string>1</string>
+		<key>OLLAMA_MAX_QUEUE</key>
+		<string>512</string>
+		<key>OLLAMA_NOPRUNE</key>
+		<string>0</string>
+		<key>OLLAMA_NO_CLOUD</key>
+		<string>1</string>
+		<key>OLLAMA_NUM_PARALLEL</key>
+		<string>1</string>
+	</dict>
+	<key>ExitTimeOut</key>
+	<integer>30</integer>
+	<key>KeepAlive</key>
+	<true/>
+	<key>Label</key>
+	<string>com.icafefx.ollama</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/usr/local/lib/ollama-v0.40.14/ollama</string>
+		<string>serve</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>StandardErrorPath</key>
+	<string>/usr/local/var/log/ollama/ollama.err.log</string>
+	<key>StandardOutPath</key>
+	<string>/usr/local/var/log/ollama/ollama.out.log</string>
+	<key>ThrottleInterval</key>
+	<integer>10</integer>
+</dict>
+</plist>

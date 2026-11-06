@@ -1,0 +1,29 @@
+# /etc/systemd/system/ollama.service
+[Unit]
+Description=Ollama Service
+After=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/ollama serve
+User=ollama
+Group=ollama
+Restart=always
+RestartSec=3
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
+
+[Install]
+WantedBy=default.target
+
+# /etc/systemd/system/ollama.service.d/override.conf
+[Service]
+Environment="OLLAMA_MODELS=/ai/ollama/models"
+Environment="OLLAMA_HOST=0.0.0.0:11434"
+
+# /etc/systemd/system/ollama.service.d/restart-limit.conf
+[Unit]
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+RestartSec=5
+Restart=on-failure

@@ -1,0 +1,10 @@
+{
+  "version": "2.0.0-candidate",
+  "models": [
+    {"tier": "light", "alias": "bomai-safe", "source": "siamcafe/bom-ai:light-v2.0.0", "enabled": true},
+    {"tier": "pro", "alias": "bomai-pro", "source": "siamcafe/bom-ai:pro-v2.0.0", "enabled": true},
+    {"tier": "light", "alias": "bomai-qc-light", "source": "siamcafe/bom-ai:light-v2.0.0", "enabled": true, "qc_only": true},
+    {"tier": "pro", "alias": "bomai-qc-pro", "source": "siamcafe/bom-ai:pro-v2.0.0", "enabled": true, "qc_only": true}
+  ],
+  "production": {"enabled": false, "reason": "Deferred: no production model or route shipped"}
+}

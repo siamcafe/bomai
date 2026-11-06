@@ -1,0 +1,28 @@
+# captured with: systemctl --user cat
+# system-level unit of this name was not installed
+# /home/bom/.config/systemd/user/bomai-owui.service
+[Unit]
+Description=BOM AI Open WebUI (:3000)
+Wants=bomai-gateway.service
+After=bomai-gateway.service
+PartOf=bomai.target
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+[Service]
+Type=simple
+WorkingDirectory=/home/bom/BOM-AI
+EnvironmentFile=/home/bom/BOM-AI/config/webui.env
+ExecStart="/home/bom/BOM-AI/venv/bin/open-webui" serve --host "127.0.0.1" --port "3000"
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=280
+TimeoutStopSec=30
+KillMode=control-group
+UMask=0077
+NoNewPrivileges=yes
+StandardOutput=append:/home/bom/BOM-AI/logs/owui.log
+StandardError=append:/home/bom/BOM-AI/logs/owui.err.log
+
+[Install]
+WantedBy=default.target

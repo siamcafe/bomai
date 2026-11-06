@@ -1,0 +1,20 @@
+[
+  "DATABASE_URL=REDACTED",
+  "LITELLM_MASTER_KEY=REDACTED",
+  "POSTGRES_DB=litellm",
+  "POSTGRES_PASSWORD=REDACTED",
+  "POSTGRES_USER=litellm",
+  "ZAI_API_KEY=REDACTED",
+  "PATH=/app/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/sbin:/sbin:/bin",
+  "SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt",
+  "LITELLM_RELEASE_TAG=v1.106.5",
+  "PRISMA_BINARY_CACHE_DIR=/opt/prisma/binaries",
+  "PRISMA_CLI_PATH=/opt/prisma/binaries/node_modules/.bin/prisma",
+  "PRISMA_CLI_QUERY_ENGINE_TYPE=binary",
+  "HOME=/app",
+  "LITELLM_NON_ROOT=true",
+  "PRISMA_SKIP_POSTINSTALL_GENERATE=1",
+  "PRISMA_HIDE_UPDATE_MESSAGE=1",
+  "PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1",
+  "PRISMA_OFFLINE_MODE=true"
+]

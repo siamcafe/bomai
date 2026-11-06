@@ -1,0 +1,64 @@
+home:
+  alias: '/home'
+
+pages:
+  expires: 60
+  theme: bomai
+
+cache:
+  enabled: true
+  check:
+    method: file
+
+assets:
+  css_pipeline: false
+  js_pipeline: false
+  enable_asset_timestamp: false
+
+errors:
+  display: false
+  log: true
+
+debugger:
+  enabled: false
+  provider: clockwork
+
+gpm:
+  releases: stable
+  verify_peer: true
+
+updates:
+  safe_upgrade: true
+  safe_upgrade_snapshot_limit: 5
+languages:
+  supported:
+    - th      # Thai
+    - en      # English
+    - zh      # Chinese
+    - ja      # Japanese
+    - ko      # Korean
+    - vi      # Vietnamese
+    - id      # Indonesian
+    - ms      # Malay
+    - es      # Spanish
+    - fr      # French
+    - de      # German
+    - pt      # Portuguese
+    - ru      # Russian
+    - ar      # Arabic
+    - hi      # Hindi
+    - it      # Italian
+  default_lang: th
+  include_default_lang: true
+  translations: true
+  http_accept_language: true
+  session_store_active: true
+  http_accept_language_fallback:
+    zh-tw:
+      - zh
+    zh-hk:
+      - zh
+    fil:
+      - en
+    nb:
+      - en

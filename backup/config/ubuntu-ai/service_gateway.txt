@@ -1,0 +1,29 @@
+# captured with: systemctl --user cat
+# system-level unit of this name was not installed
+# /home/bom/.config/systemd/user/bomai-gateway.service
+[Unit]
+Description=BOM AI gateway (bom_runtime.py :11435)
+Wants=bomai-ollama.service bomai-searxng.service
+After=bomai-ollama.service bomai-searxng.service
+PartOf=bomai.target
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+[Service]
+Type=simple
+WorkingDirectory=/home/bom/BOM-AI
+Environment=PYTHONUTF8=1
+Environment=PYTHONUNBUFFERED=1
+ExecStart="/home/bom/BOM-AI/venv/bin/python" "/home/bom/BOM-AI/package/shared/bom_runtime.py" --root "/home/bom/BOM-AI" --upstream "http://127.0.0.1:11434" --host "127.0.0.1" --port "11435" --expected-version "0.40.10"
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=180
+TimeoutStopSec=30
+KillMode=control-group
+UMask=0077
+NoNewPrivileges=yes
+StandardOutput=append:/home/bom/BOM-AI/logs/gateway.log
+StandardError=append:/home/bom/BOM-AI/logs/gateway.err.log
+
+[Install]
+WantedBy=default.target

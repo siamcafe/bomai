@@ -1,0 +1,28 @@
+# captured with: systemctl --user cat
+# system-level unit of this name was not installed
+# /home/bom/.config/systemd/user/bomai-searxng.service
+[Unit]
+Description=BOM AI SearXNG (gunicorn :8888)
+PartOf=bomai.target
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+[Service]
+Type=simple
+WorkingDirectory=/home/bom/BOM-AI/runtime/searx-src/searxng-6671d89bede8c9fc108b17bb98916170f5657650
+Environment=SEARXNG_SETTINGS_PATH=/home/bom/BOM-AI/config/searxng_settings.yml
+Environment=PYTHONUTF8=1
+Environment=PYTHONUNBUFFERED=1
+ExecStart="/home/bom/BOM-AI/searx-venv/bin/gunicorn" --bind "127.0.0.1:8888" --workers 1 --threads 4 --timeout 60 "searx.webapp:app"
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=150
+TimeoutStopSec=30
+KillMode=control-group
+UMask=0077
+NoNewPrivileges=yes
+StandardOutput=append:/home/bom/BOM-AI/logs/searxng.log
+StandardError=append:/home/bom/BOM-AI/logs/searxng.err.log
+
+[Install]
+WantedBy=default.target

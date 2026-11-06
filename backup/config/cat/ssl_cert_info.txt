@@ -1,0 +1,3 @@
+subject=CN = bomai.app
+notBefore=Oct  3 00:00:00 2026 GMT
+notAfter=Jan  1 23:59:59 2027 GMT

@@ -1,0 +1,13 @@
+# bomai-related units only
+# system
+ollama.service enabled enabled
+
+# user (systemctl --user)
+bomai-gateway.service disabled enabled
+bomai-ollama.service disabled enabled
+bomai-owui.service enabled enabled
+bomai-searxng.service enabled enabled
+
+# docker (names only)
+litellm ghcr.io/berriai/litellm-non_root:v1.106.5
+litellm-db postgres:16-alpine
