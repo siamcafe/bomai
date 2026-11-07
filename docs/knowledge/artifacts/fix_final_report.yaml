@@ -1,0 +1,51 @@
+project: bomai
+step: fix_final_start_ollama_mac_gateway
+status: VERIFIED
+i9_ollama_running: true
+i9_bomai_safe_created: true
+i9_chat_test_han: 0
+mac_gateway_restarted: true
+mac_egress_emitter: true
+mac_owui_untouched: true
+verdict: PASS
+
+evidence_i9:
+  ollama_start: STARTED-EXE hidden serve; api/version={"version":"0.40.13"}; netstat 127.0.0.1:11434 LISTENING pid=27784
+  model_create: ollama create bomai-safe -f D:\BOMAI\releases\2.0.3\b20261106233912\Modelfile.bomai-safe -> success (new layer sha256:d5175b1f0c5e..., manifest written)
+  modelfile_v9_1: ollama show SYSTEM contains Han prohibition (ห้ามใช้อักษรฮั่น...) + translation exception (ตอบเป็นภาษาไทยเป็นค่าเริ่มต้น...หากผู้ใช้ขอให้แปล); top_p 0.95
+  chat_tests_gateway_11435:
+    r1_sawasdee: HTTP=200 han=0 content_len=33
+    r2_dna: HTTP=200 han=0 content_len=220
+    r3_news: HTTP=200 han=0 content_len=124
+  han_counter: Script=Han unicode ranges (U+2E80-2FD5,3005,3007,3021-3029,3038-303A,31C0-31E3,3400-4DBF,4E00-9FFF,F900-FAFF,20000-2FA1F,30000-3134A); local files chatlogs/r1.json r2.json r3.json
+
+evidence_mac:
+  old_gateway: pid=71209 cmdline=venv/bin/python bom_runtime.py --root /Users/bom/BOM-AI --upstream http://127.0.0.1:11434 --host 127.0.0.1 --port 11435 --expected-version 0.40.10
+  runtime_file: 2584 lines; sha256=f19c4193ec2f0a54bd8cecd75b711973a3322dee17e5a1ebad36117854f299b7 (matches spec)
+  missing_files_deployed:
+    - bomai_han_policy.py -> /Users/bom/BOM-AI/package/shared/ (1782B, sha256 ad2f885cd905f390f787f32dea2013754f6c7087b1d6bd409f62e235c584a900 == i9 release 2.0.3 source)
+    - models.json catalog -> /Users/bom/BOM-AI/package/shared/models.json (600B, sha256 83c2a441b1e35ed6f2d2f985825a6a8e27fc5e453763f5a38ac589435d552a39 == release 2.0.3 config/models.json)
+  deploy_reason: HF-1 runtime crashed ModuleNotFoundError bomai_han_policy (line 38) then FileNotFoundError package/shared/models.json (line 1690); previous lane replaced only bom_runtime.py leaving half-set
+  new_gateway: pid=6900 (71209 killed), same flags + --expected-version 0.40.14, LISTENING 127.0.0.1:11435
+  api_version: {"version":"0.40.14"} HTTP=200 (version gate passed at startup else process exits)
+  runtime_started_event: version=0.40.14 port=11435 ts=2026-11-07T01:10:14Z in /Users/bom/BOM-AI/logs/runtime.jsonl
+  owui_untouched: port 3000 LISTENING pid=755 (unchanged); mac ollama 11434 still 0.40.14 (read-only checks only)
+  mac_chat: HTTP=200 3.05s han=0 content='สวัสดีครับ ผมคือ BOM AI...' events request+complete logged
+  forced_han_probe: request to copy 中国 text -> model refused in Thai, han=0; alias-gate 400 for unknown model; han_egress_blocked events=0 (all upstream layers held; emitter block path not exercised by a real violation)
+  egress_emitter_basis: HF-1 runtime (sha f19c4193) imports bomai_han_policy POLICY_ID; all send_json/emit egress wrapped by EgressEmitter.guarded(); 3 requests served through guarded path; policy module verified imported (process refuses to start without it)
+
+files_changed:
+  mac:
+    - /Users/bom/BOM-AI/package/shared/bomai_han_policy.py (NEW, from i9 release 2.0.3)
+    - /Users/bom/BOM-AI/package/shared/models.json (NEW, from i9 release 2.0.3 config)
+  mac_tmp_diagnostics: /tmp/bomgw_diag.log /tmp/mac_r1.json /tmp/mac_han.json /tmp/mac_han2.json /tmp/mac_han3.json (scratch, /tmp self-cleaning)
+  i9: no files changed; bomai-safe model created inside ollama store; ollama.exe serve started
+  local_workspace: chatlogs/*.json evidence copies + han_count.py
+
+residual_risks:
+  - gateway runs WITHOUT --config so gateway_key='' (same as old gateway; unchanged per FORBIDDEN no-credential-change); spec 2.5 '401' expectation not applicable -- /api/version returns 200
+  - han_egress_blocked path not demonstrated with a real violation (defense layers above it held)
+  - old backup file bom_runtime.py.bak_20261107073204 (35235B) left in place untouched
+  - /_ops/reports two-path push NOT done: this spec defines hub artifacts + joblog as report channel
+
+recommendation: accept

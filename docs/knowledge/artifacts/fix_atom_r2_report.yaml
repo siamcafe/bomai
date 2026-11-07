@@ -1,0 +1,119 @@
+project: bomai
+step: fix_atom_r2_n002_n005_cleanup
+spec: hub art#57262
+survey_ctx: hub art#57246
+ran_at: "2026-11-07T00:25:00Z..2026-11-07T00:36:00Z"
+host: DESKTOP-PE1B0VH (i9 local) + ubuntu-ai + mac + cat
+status: VERIFIED
+
+# --- required acceptance keys ---
+n002_ubuntu_bind: FIXED
+n003_install_json: FIXED
+n004_modelfile: FIXED
+n005_mac_gateway: FIXED
+n007_appdata_stub: FIXED
+junk_removed_bytes: 2597941318
+junk_removed_count: 82
+production_impact: none
+
+# --- N002 ubuntu-ai override.conf ---
+n002_detail:
+  file: /etc/systemd/system/ollama.service.d/override.conf
+  backup: override.conf.bak_20261107072809 (96 bytes, root:root)
+  change: 'OLLAMA_HOST=0.0.0.0:11434 -> OLLAMA_HOST=127.0.0.1:11434'
+  verify_grep: 'Environment="OLLAMA_HOST=127.0.0.1:11434"'
+  verify_systemd_show: 'OLLAMA_HOST=127.0.0.1:11434' (daemon-reload done)
+  manual_serve: 'pid 1933681 alive, 127.0.0.1:11434, version 0.40.14, untouched'
+  unit_state: enabled+inactive (not started by this task)
+
+# --- N003 i9 install.json ---
+n003_detail:
+  file: D:\BOMAI\state\install.json
+  backup: D:\BOMAI\state\install.json.bak_20261107072928 (1192 bytes pre-image)
+  change: 'build b20261106042726 -> b20261106233912 (rel leaf), updated 2026-11-07T07:29:28+07:00'
+  verify: 're-parsed JSON: release=2.0.3 build=b20261106233912 status=COMPLETE, rel field matches build'
+  deviation: 'spec asked Out-File -Encoding utf8NoBOM; PS 5.1 lacks it. Original file already had UTF-8 BOM; wrote PS5.1 UTF8 (BOM kept) for format consistency.'
+  preserved: install.json.bak_20261106T1719Z untouched
+
+# --- N004 i9 Modelfile ---
+n004_detail:
+  file: D:\BOMAI\releases\2.0.3\b20261106233912\Modelfile.bomai-safe
+  backup: Modelfile.bomai-safe.bak_20261107073131 (700 bytes pre-image)
+  change: 'SYSTEM block replaced with SYSTEM_PROMPT extracted from shipping bom_runtime.py (v9.1, 4 lines, 365 chars normalized)'
+  verify: 'SYSTEM_MATCHES_RUNTIME_NORMALIZED=True; FROM siamcafe/bom-ai:light-v2.0.0 intact; PARAMETER count 7 unchanged; no BOM (same as original); new size 1273 bytes'
+  contains: 'translation exception (หากผู้ใช้ขอให้แปล...) + Han prohibition (ห้ามใช้อักษรฮั่น...)'
+  old_text_gone: 'ตอบเป็นภาษาไทยเสมอ removed'
+  ollama_create: 'NOT run - i9 Ollama DOWN (N001, owner starts Ollama then creates model)'
+
+# --- N005 Mac gateway ---
+n005_detail:
+  file: /Users/bom/BOM-AI/package/shared/bom_runtime.py
+  pre: '695 lines, sha256 f3a7aa3ce36d1eca8a8671d7e8e15ecf9b3e97f77ad0cce3145a9bc667af069c'
+  backup: bom_runtime.py.bak_20261107073204 (35235 bytes; older bak_20261016_112655 untouched)
+  transfer: 'scp -O from D:\BOMAI\releases\2.0.3\b20261106233912\bom_runtime.py -> /tmp/bom_runtime_hf1.py, sha verified before replace'
+  post: '2584 lines, sha256 f19c4193ec2f0a54bd8cecd75b711973a3322dee17e5a1ebad36117854f299b7'
+  process: 'file replaced, process restart needed for activation, not done by this spec; pid 71209 NOT killed (READ-ONLY PROD), still LISTENING 127.0.0.1:11435, up 7 days, --expected-version 0.40.10 in memory'
+  mac_ollama: '0.40.14 loopback, pid 63159, untouched'
+
+# --- N007 AppData stub ---
+n007_detail:
+  path: C:\Users\amd\AppData\Local\BOMAI
+  survey: 'only state\install-root.txt, 10 bytes, content D:\BOMAI'
+  action: ONLY_STUB branch -> removed
+  verify: 'Test-Path False (ls exit 2)'
+  not_touched: C:\Users\amd\AppData\Local\BOMAI.operation.lock (not in spec delete list, kept)
+
+# --- junk cleanup ---
+junk_breakdown:
+  i9_temp: {count: 68, bytes: 225107787, note: 'TEMP bomai*/hf_readme*/mac_modelfile* + E:\temp\bomai* incl 8 bomai_chrome_* profiles'}
+  i9_e_remnants: {count: 2, bytes: 2324, note: 'E:\BOMAI-QC + E:\BOMAI_QC_STREET_pids.json'}
+  i9_empty_releases: {count: 2, bytes: 0, note: 'D:\BOMAI\releases\2.0.0 + 2.0.1 both empty, rmdir; 2.0.2/2.0.3 untouched'}
+  i9_appdata_backups: {count: 4, bytes: 2372605834, note: 'BOMAI.bak_20261010_142917 6364406 + BOMAI.bak_qa2_20261001_103453 151964 + BOMAI.bak_qa_20261001_103453 158280 + BOMAI_Installer 2365931184 (owner GO per spec 6.6)'}
+  ubuntu_tmp: {count: 0, bytes: 0, note: 'already clean at 00:34Z (survey saw 17 items/63595538 bytes); verified 0 matches'}
+  cat_tmp: {count: 6, bytes: 225373, note: 'deleted by this lane; 8 further entries seen at 00:28:30Z probe (incl /tmp/bomai-full-backup-20261031_051159.tar.gz) were already absent at 00:34:20Z deletion time - removed outside this lane between probes; final state 0 matches, 0 tar.gz in /tmp'}
+  cat_user_note: 'spec said siamcar@122.155.168.7 (no key auth, Permission denied); used bom@122.155.168.7 per cat-nas-ops R1 documented access'
+  n007_stub: {count: 1, bytes: 10, note: 'counted under N007, not in junk_removed totals'}
+kept_intact:
+  - /home/_ops_backups/bomai (CAT, 1.4M)
+  - D:\BOMAI\state\install.json.bak_20261106T1719Z
+  - D:\BOMAI\state\appdata_webui_backup.db
+  - C:\Users\amd\AppData\Local\BOMAI.operation.lock
+  - D:\BOMAI\releases\2.0.2 + 2.0.3 (live trees)
+
+# --- production verify 7.1 ---
+production_verify:
+  i9_gateway_11435: 'pid 24384 LISTENING (same as survey), /healthz HTTP 200, /api/version unauthorized (auth on)'
+  i9_owui_8080: 'pid 8304 (same), version 0.12.5'
+  i9_searxng_8888: 'pid 53304 (same, still 2.0.2 launcher = N006 out of scope)'
+  i9_ollama_11434: 'absent (known N001, not started per FORBIDDEN)'
+  ubuntu_ollama: 'pid 1933681 (same), 127.0.0.1:11434, 0.40.14'
+  mac_ollama: '0.40.14 loopback'
+  mac_gateway_11435: 'pid 71209 (same, not killed)'
+  mac_owui_3000: 'pid 755 (same)'
+  pids_changed: 0
+
+files_changed:
+  - /etc/systemd/system/ollama.service.d/override.conf (ubuntu-ai)
+  - D:\BOMAI\state\install.json (i9)
+  - D:\BOMAI\releases\2.0.3\b20261106233912\Modelfile.bomai-safe (i9)
+  - /Users/bom/BOM-AI/package/shared/bom_runtime.py (mac)
+files_deleted:
+  - C:\Users\amd\AppData\Local\BOMAI (stub)
+  - 82 junk top-level entries per breakdown (i9 + CAT; ubuntu pre-clean)
+backups_created:
+  - override.conf.bak_20261107072809
+  - install.json.bak_20261107072928
+  - Modelfile.bomai-safe.bak_20261107073131
+  - bom_runtime.py.bak_20261107073204 (mac)
+
+scope_respected:
+  out_of_scope_kept: [N001 owner starts ollama, N006 next restart, ubuntu QC 40G, Mac QC 12G, NAS 13G]
+  forbidden_honored: [no ollama start on i9, no kill 71209, no touch 2.0.2/2.0.3 procs, no ollama create, no sshd/nginx/da touch, no paid API]
+
+residual_risk:
+  - Mac gateway pid 71209 still runs OLD runtime in memory until owner restarts (expected-version 0.40.10 vs ollama 0.40.14)
+  - i9 chat generation blocked until owner starts Ollama (N001); Modelfile -> model create pending after that
+  - ubuntu enabled unit inactive; on next boot it will start with 127.0.0.1 bind (fixed) - manual serve may then conflict, owner aware per survey
+  - CAT /tmp 8 entries + ubuntu /tmp 17 entries disappeared between survey and this task (outside this lane); final verified clean
+
+recommendation: accept

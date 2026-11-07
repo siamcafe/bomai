@@ -1,0 +1,97 @@
+project: bomai
+step: fix_implement_v204_all
+date: 2026-11-07
+implementer: zcode GLM-5.3 (THOUGHT Max)
+blueprint: K3 GOD BLUEPRINT art#57376 (962 lines, read in full)
+spec: art#57378
+
+implementation:
+  bat_original_lines: 2338
+  bat_new_lines: 2725
+  bat_new_sha256: "58b21b88aec9c019be6fb0d92cf39e80da9baaf0be0c1de1d542d995ecb4155a"
+  fixes_applied: [FIX-01, FIX-02, FIX-03, FIX-04, FIX-05, FIX-06, FIX-07, FIX-08, FIX-09, FIX-10]
+  seed_reencoded: true
+  seed_sha256: "8ec4df940b6745f1242643497ffa472a78087ffb13187248701cd469612204a9"
+  seed_revision: bomai-v2.0.4-hf1-1
+  seed_force_reseed_flag: true
+  unix_modified: true
+  install_unix_sha256: "8efc2fff841bbd3956f751efbbf4846944db0960c00cc8bdb6095bc5c50eb23d"
+  sh_new_sha256: "a55f3a20d203a4e4bb6c7461e2aaa4f1052c27972c55ce4605e7a16dc32f9ff4"
+  mac_command_sha256: "ffc1b9c19a4dfbc5e4ec096e9931b6be0d91a329a1c675a0bca417ef932dfcfc"
+  mac_zip_sha256: "6daa6b508cdf936b0b4cae3d6a1d2307c1ef17149d24efabd8052fa9b7f418ba"
+  forbidden_files: "untouched - bom_runtime.py / han_policy / boundary / guard / install_hf1 / GOD params / model tags; only seedPayload re-embedded; other payloads byte-identical (asserted by rebuild script)"
+  psparser_tokenize: TOKENS_OK
+  mutex_grep: "exactly 3 identical 'Local\\BOM-AI-Installer' (no version suffix)"
+  validatepath_smoke: '{"freeGB":3457.8,"ok":true,"reason":"","fs":"NTFS"}'
+  bash_n: "linux.sh + mac.command OK"
+  build_installers.py: "not in repo (109 files checked) -> manual payload re-embed per spec decision table"
+
+qc_windows:
+  W-T1: {status: PASS, evidence: "wt1_console.log: [done] ok=True; install.json schema=2 version=2.0.4 status=COMPLETE; runtime.json expected_version=0.40.13"}
+  W-T2: {status: PASS, evidence: "wt2b: RC=0; 'adopted install root from pointer'; S0 verify existing -> complete 100%; 8080=200 /healthz=200 /8888=200; no downloads"}
+  W-T3: {status: PASS, evidence: "diskNeededGB=99999 variant: verify-only RC=0 'low disk (319.7 GB free) tolerated - nothing to download'; fresh install RC=1 'E-DISK install root free 319.7GB < 99999GB'"}
+  W-T4: {status: PASS, evidence: "RC=0; ports 8080/8888/11435 free, only shared 11434 left; data/ KEPT (webui.db, uploads, secret); Ollama KEPT running; empty releases shell sweep added"}
+  W-T5: {status: PASS, evidence: "uninstall + BOMAI_REMOVE_DATA=1: RC=0 x2 runs; %LOCALAPPDATA%\\BOMAI removed entirely including data (empty-root sweep)"}
+  W-T6: {status: PASS, evidence: "wt6d_result.txt: ollama unins001-swapped out, BOM AI downloaded OllamaSetup itself (installed_by_bomai=True, status=COMPLETE); uninstall --remove-models --remove-ollama RC=0: 4 aliases + 2 siamcafe base images removed, 'Ollama app removed (unins000.exe)', 'empty model store D:\\bomai_qc_store\\models' swept, OLLAMA_FILE_GONE, procs=0; E:\\BOMAI real store INTACT (light+pro v2.0.0)"}
+  W-T7: {status: PASS, evidence: "wt7c_result.txt: foreign ollama + llama3.2 pulled; install RC=0; uninstall ALL opt-ins RC=0; ollama.exe alive + serving; llama3.2:latest intact; bomai-safe + pre2-legacy aliases removed"}
+  W-T8: {status: PASS, evidence: "killed 8080 listener pid 116220 (wrapper had followed child death); uninstall RC=0 with '[log] auto-stop: owned listener pid ... port 11435/8888'; ports free after"}
+  W-T9: {status: PASS, evidence: "'adopted install root from pointer: D:\\BOMAIQC' (wt14e) drives whole tree; no second tree under %LOCALAPPDATA% (File Not Found)"}
+  W-T10: {status: PASS, evidence: "BOMAI_TIER=pro install RC=0 tier=pro bomai-pro:latest 7.9GB; rerun WITHOUT env: S0 verify-only RC=0, tier_after=pro status=COMPLETE (no downgrade)"}
+  W-T11: {status: PASS, evidence: "uninstall during in-flight install: '[err] E-MUTEX another BOM AI installer is running'; install completed unaffected (complete 100%, RC=0)"}
+  W-T12: {status: PASS, evidence: "real 0.40.11 swap: '[log] compatible ollama 0.40.11 (pinned 0.40.13)' + reused; runtime.json expected_version=0.40.11; install.json ollama_version_accepted=0.40.11; RC=0. Negative control: v2.0.3 BAT on 0.40.11 -> 'E-OLLAMA ... requires exactly 0.40.13'"}
+  W-T13: {status: PASS, evidence: "WT13_LOGIC_PASS: v204_state=v2.0.4 / v203_state=v2.0.3 / empty_state=v2.0.4; install.json version field live; GUI text not driven headless (logic + data verified)"}
+  W-T14: {status: PASS, evidence: "v2.0.3 installed at D:\\BOMAIQC RC=0 (0.40.13 restored first); Thai chat created han=0; v2.0.4 plain run: adopted pointer + 'key mismatch - fresh release dir'; version=2.0.4 tier=light COMPLETE; gateway_key UNCHANGED (0e435f40... before==after); releases 2.0.3+2.0.4 both kept; active=2.0.4 b20261107135444; dataDir carried; login with 2.0.3 creds works; /api/v1/chats/new CHATS_LISTED=1 (note: /api/chat/completions does not persist chat rows - endpoint semantics)"}
+  han_test: {han_count: 0, evidence: "restore2_result.txt: PLAIN_CHAT han=0 len=418 + IMAGE_CHAT han=0 len=270 (both Thai); win_reply_plain.txt / win_reply_image.txt saved"}
+  image_test: {status: PARTIAL, evidence: "Windows: attachment accepted, Thai reply, Han=0 on 2 attempts but model returned decline template instead of describing; FULL image description PASS on mac + linux ('รูปนี้แสดงแนวโน้มขาขึ้น' han=0)"}
+
+qc_macos:
+  M-T1: {status: PASS, evidence: "macOS 27.2 M4 Pro; CONFIG_VERIFIED version=2.0.4 tier=light; install.json schema=2 COMPLETE; ollama_version_accepted=0.40.14 (brew, series-accept log); created_paths recorded; services listening; pointer written"}
+  M-T2: {status: PASS, evidence: "set web.search.result_count=5 -> full re-run with seed bomai-v2.0.4-hf1-1 (force_reseed=false) -> STILL 5; ui.default_locale th-TH (FORCE) maintained"}
+  M-T3: {status: PASS, evidence: "--uninstall RC=0; 0 listeners on 8080/8888/11435; Desktop/BOM AI.command GONE; LaunchAgents/app.bomai.local.plist GONE; 'data/ (chats and settings)' KEPT"}
+  M-T4: {status: PASS, evidence: "reinstall RC=0; --uninstall --remove-data --remove-models --remove-ollama RC=0; root gone; 'system Ollama present - not installed by BOM AI' kept (brew untouched); alias-removal API fixed + proven on linux (L-T4b)"}
+  M-T5: {status: PASS, evidence: "state/*.pid deleted with services running -> --uninstall RC=0 via port-owner path (no 'unowned service' abort)"}
+  M-T6: {status: PASS, evidence: "'[root] adopted install root from pointer: /Users/bom/bomai-v204-qc'; no-second-tree-under-default"}
+  han_test: {han_count: 0, evidence: "plain=0 search=0 image=0, login OK, all Thai"}
+  image_test: {status: PASS, evidence: "'รูปนี้แสดงแนวโน้มขาขึ้น ราคามีแนวโน้มเพิ่มขึ้น' (describes chart uptrend) han=0"}
+
+qc_linux:
+  L-T1: {status: PASS, evidence: "Ubuntu 26.04.1 RTX5080+5060Ti; install COMPLETE; install.json schema=2 version=2.0.4; '[ollama] compatible 0.40.14 (pinned 0.40.13)'"}
+  L-T2: {status: PASS, evidence: "result_count 5 -> re-run RC=0 -> STILL 5 (PRESERVE)"}
+  L-T3: {status: PASS, evidence: "--uninstall RC=0; bomai.desktop + autostart GONE; data kept"}
+  L-T4: {status: PASS, evidence: "L-T4b: --uninstall --remove-models: REMOVED services+tree; bomai-safe aliases gone from /api/tags; root gone; /usr/local/bin/ollama + ollama.service ACTIVE untouched"}
+  L-T5: {status: PASS, evidence: "stale pids + busy ports -> --uninstall RC=0 (port-owner stop)"}
+  L-T6: {status: PASS, evidence: "'[root] adopted install root from pointer: /home/bom/bomai-v204-qc'; no-second-tree-under-default"}
+  han_test: {han_count: 0, evidence: "plain=0 (46s), search=0 (18s), image=0 (9.7s) - all Thai"}
+  image_test: {status: PASS, evidence: "'รูปนี้แสดงแนวโน้มขาขึ้น' (chart described) han=0"}
+
+restore_state:
+  i9: "BOM AI 2.0.4 COMPLETE at %LOCALAPPDATA%\\BOMAI (light), ollama 0.40.13 BOM-AI-installed serving, all 4 ports listening, model store E:\\BOMAI\\ollama-models INTACT (light+pro v2.0.0, llama3.2, qc, pre2-legacy aliases), test trees D:\\BOMAIQC + D:\\bomai_qc_store removed"
+  mac: "test root fully uninstalled; legacy launchd agents bootstrapped back (com.bomai.searxng on 8888 confirmed listening, gateway+ollama agents reloaded); legacy ~/BOM-AI untouched"
+  ubuntu: "test root fully uninstalled; bomai-searxng user service restarted (8888) + bomai-owui (3000) active; system ollama.service active; legacy ~/BOM-AI untouched"
+
+env_notes:
+  - "i9 installs session-hosted via scheduled task (SSH console death kills spawned services - harness artifact)"
+  - "~/BOM-AI on both unix rigs occupied by legacy deployment -> dedicated --root used; legacy services paused + restored"
+  - "local 8080 on zcode host busy (owner's own BOM AI 2.0.3) -> live chat via OWUI HTTP API per rig instead of headed browser"
+
+extra_fixes_beyond_blueprint (implementer authority, all found by street QC):
+  - "S0 verify-only gateway restart passed no --config/--catalog -> gateway died instantly (pre-existing 2.0.3 bug; fixed in BAT; bom_runtime.py untouched)"
+  - "unins000 hardcoded -> stacked Ollama installs shift live uninstaller to unins001+ (orphan unins000 without .dat); resolver picks first uninsNNN with .dat sibling"
+  - "ollama /api/delete requires DELETE method (POST=405); request() gained method param (unix)"
+  - "FIX-08 pointer adoption updated only state paths -> adoption moved BEFORE all path derivation (REL_DIR_/CACHE_DIR_ etc.)"
+  - "OllamaSetup silent run autostarts ollama app+serve children that inherit the handle -> Start-Process -Wait hangs forever; bounded WaitForExit(600s) + binary-presence gate"
+  - "uninstall step 9: kill serve AND tray before unins + retry pass (live child makes Inno defer file deletion)"
+  - "tags 'foreign model' check excluded our own siamcafe/bom-ai:* base image (else Ollama never removable on a fully-owned machine); base image also removed in the opt-in"
+  - "uninstall empty-dir sweep extended to releases/cache/logs; console-mode REMOVED/KEPT summary printed"
+  - "unix uninstall also deletes the pulled siamcafe base image (mirror of windows fix; py_compile verified; not re-driven on a unix rig after the last rebuild)"
+
+deviations_from_blueprint:
+  - "M-T6/L-T6: blueprint prose says abort when pointer shows install elsewhere; blueprint resolve_root code ADOPTS - implemented adopt (consistent with W-T9 + code block); spec self-contradiction resolved in favor of code"
+  - "Test-OwnedPid hoisted to sibling function with explicit root param (identical semantics)"
+  - "Windows GUI wizard not driven headless; GUI-only visuals verified via logic/data tests; engine identical console/GUI"
+  - "W-T8: blueprint assumed wrapper survives child kill; real start-owui.ps1 wrapper exits with its child - orphan-sweep covers the reverse case; auto-stop proven on 11435/8888"
+  - "W-T14 chats: /api/chat/completions does not persist chat rows; preservation proven via same dataDir + carried admin (initial_admin_needed=false) + working 2.0.3 login + /api/v1/chats/new"
+  - "Windows image test PARTIAL (Thai + Han=0 but decline template); full description proven on mac+linux"
+
+verdict: PASS
+recommendation: accept

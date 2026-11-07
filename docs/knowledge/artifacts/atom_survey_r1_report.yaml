@@ -1,0 +1,535 @@
+project: bomai
+step: survey_atom_full_project
+surveyed_at: "2026-11-06T07:55:00+07:00"
+mode: read-only
+tool: grok
+model: "Grok 4.7 REASONING xhigh"
+joblog_running_id: 19756
+context_artifacts:
+  - 56535
+  - 56566
+  - 56397
+  - 56477
+scope: "BOMAI installer, desktop runtime, bomai.app, GitHub and Hugging Face mirrors. C2 was read-only. No product file, service, database, sshd, or DNS change."
+limits:
+  - "Shipping bom_runtime.py was parsed in full (2279 lines, 47 functions, 8 classes, 42 methods). Han, safety, sampling, and auth paths were read line by line."
+  - "Grav tree was inventoried (209 markdown files, language counts, version and asset-hash grep). Not every page body was read line by line."
+  - "OWUI middleware was identified by sha256 against the known stock and HF-1 hashes. The 304626-byte file was not re-read line by line."
+  - "No concurrent load test and no Pro-tier generation. One warm 8-token sample was taken on the model already resident in Ollama."
+owner_live:
+  root: "D:\\BOMAI"
+  release_dir: "D:\\BOMAI\\releases\\2.0.2\\b20261106042726"
+  install_status: COMPLETE
+  owui: "127.0.0.1:8080 version 0.12.5 pid 39260 started 2026-11-06 04:30:24"
+  gateway: "127.0.0.1:11435 pid 81052 started 2026-11-06 04:30:07"
+  searxng: "127.0.0.1:8888 pid 53304"
+  ollama: "127.0.0.1:11434 version 0.40.13 pid 45164 started 2026-11-05 02:23:17"
+  runtime_sha256: "sha256=054ed6b1fec1d94b80eebadd9200e08afc452ae74c75346ba977dce856c3e0a3"
+  middleware_sha256: "sha256=9fcfcdaa2d658d51dc7de11dac41710b7fbaa8258de70c00f10d74eb53ae2bf5"
+summary:
+  CRITICAL: 0
+  HIGH: 9
+  MEDIUM: 14
+  LOW: 2
+  INFO: 11
+  PASS: 15
+  BLOCKED: 1
+  NOT_RUN: 1
+  total: 53
+recommendation: inspect
+findings:
+  - id: F001
+    part: 1
+    severity: HIGH
+    file: "D:\\BOMAI\\releases\\2.0.2\\b20261106042726\\bom_runtime.py"
+    line: "487, 676, 818-821"
+    description: "Shipped 2.0.2 Han control is a quality-path check, not an egress guarantee. allow_han becomes true when the user text contains จีน or chinese. HAN_CHAR_RE covers only U+3400-U+4DBF and U+4E00-U+9FFF. Code spans are removed before the check. Nineteen self.wfile.write sites remain. The running owner process is this file. The QC sandbox runtime has an EgressEmitter and a single write site, and that tree is not the installed product."
+    expected: "Every assistant egress rejects Unicode Script=Han, with no user-text bypass and one controlled write path."
+    actual: "Stock runtime sha256=054ed6b1fec1d94b80eebadd9200e08afc452ae74c75346ba977dce856c3e0a3 still has the bypass and the narrow regex. art 56477 recorded 4 client Han leaks on this runtime."
+    suggested_fix: "Package the already-tested egress emitter into a new release folder. Do not patch the running 2.0.2 tree in place."
+  - id: F002
+    part: 1
+    severity: HIGH
+    file: "D:\\BOMAI\\releases\\2.0.2\\b20261106042726\\bom_runtime.py"
+    line: "400-453, 481-482, 687-691"
+    description: "There is a phishing refusal and a fraud-sensitive detector. Words such as ระเบิด, อาวุธ, and หลอก only exclude the request from the quality rewrite. They do not return a refusal. art 56477 recorded 4 refusal misses on this class of prompt."
+    expected: "Disallowed harmful requests get a fixed refusal and are not sent through as a normal answer."
+    actual: "Safety words skip the second pass and the model still answers."
+    suggested_fix: "Add an explicit refusal branch before generation for the existing safety word list, separate from the quality rewrite."
+  - id: F003
+    part: 1
+    severity: MEDIUM
+    file: "D:\\BOMAI\\releases\\2.0.2\\b20261106042726\\Modelfile.bomai-safe"
+    line: 11
+    description: "The shipped system prompt says to answer in Thai always. The same contract is the runtime SYSTEM_PROMPT. A translation-into-English request then fails a Thai-ratio gate even when the English answer is what was asked."
+    expected: "Thai by default, and the language the user requested when the task is translation."
+    actual: "Prompt text requires Thai for every answer. Locked sampling parameters beside it are the v9 set."
+    suggested_fix: "Change the prompt in a new build so translation keeps the requested target language, and keep the sampling lock."
+  - id: F004
+    part: 1
+    severity: HIGH
+    file: "C:\\Users\\amd\\AppData\\Local\\BOMAI\\state\\install.json"
+    line: 0
+    description: "The AppData tree is not the live install. install.json status is FAILED code E-DATA because data\\open-webui and releases\\data\\open-webui both exist. active-release.txt still points at releases\\0.3.1-r2\\b20261031060858. The 2.0.2 folder there has no start-owui.ps1. installation.json names D:\\BOMAI-street, which does not exist. state\\install-root.txt says D:\\BOMAI. Live pid 39260, 53304, and 81052 were started from D:\\BOMAI\\releases\\2.0.2\\b20261106042726, whose own install.json status is COMPLETE."
+    expected: "One root, one data directory, and active-release matching the process command lines."
+    actual: "Two roots and three pointer files disagree. The running product is D:\\BOMAI. The AppData E-DATA failure is still on disk."
+    suggested_fix: "Owner chooses which data directory to keep before any repair. This survey did not move or delete either directory."
+  - id: F005
+    part: 1
+    severity: MEDIUM
+    file: "D:\\BOMAI\\state\\install.json"
+    line: 0
+    description: "The completed D:\\BOMAI record says release 2.0.0 and build b20261105192845, while rel is D:\\BOMAI\\releases\\2.0.2\\b20261106042726 and runtime.json says release 2.0.2. The current installer source sets BOMAI_VERSION v2.0.2 and release 2.0.2."
+    expected: "install.json release and build match the folder that is running."
+    actual: "Folder and runtime.json say 2.0.2. The install record still carries a 2.0.0 release value and an older build id."
+    suggested_fix: "On a successful upgrade, rewrite release, build, and updated together. Do not leave the previous record's identity fields in place."
+  - id: F006
+    part: 1
+    severity: LOW
+    file: "install-bom-ai-linux.sh"
+    line: "2, and Windows bat line 767"
+    description: "Linux and macOS wrapper comments say BOM AI 2.0.0. The Windows mutex is named Local\\BOM-AI-Installer-2.0.0. The payload and the Windows header are v2.0.2."
+    expected: "Wrapper comment, mutex name, and release pin use one version."
+    actual: "Comment and mutex still say 2.0.0."
+    suggested_fix: "Bump the generated comment and the mutex name in the next installer build."
+  - id: F007
+    part: 1
+    severity: LOW
+    file: "runtime/models.json"
+    line: 0
+    description: "The embedded and installed models.json says version 2.0.0-candidate inside the 2.0.2 release. sha256=83c2a441b1e35ed6f2d2f985825a6a8e27fc5e453763f5a38ac589435d552a39 on the unix payload and on both Windows release copies."
+    expected: "Catalog version matches the release."
+    actual: "String is still 2.0.0-candidate. Aliases and tier tags themselves are the 2.0.0 model tags, which is a separate naming choice."
+    suggested_fix: "Set the catalog version field when cutting the next release."
+  - id: F008
+    part: 1
+    severity: HIGH
+    file: "icafefx/bomai_installer/build/pkg-win/shared/bom_runtime.py"
+    line: 0
+    description: "The repo copy is 565 lines and pins Ollama 0.40.2. sha256=b11ac6a584b64954e16db189979a283e114bd44228da5bab4e334c04dd44db3f. The bytes that actually run are 2279 lines, sha256=054ed6b1fec1d94b80eebadd9200e08afc452ae74c75346ba977dce856c3e0a3, embedded in the Linux and macOS installers."
+    expected: "The package source that produces the installer matches the installed runtime hash."
+    actual: "Editing the repo file would not change the shipping gateway."
+    suggested_fix: "Treat the hashed installer payload as the source of truth and replace the stale repo snapshot in a new commit. Do not patch the old file and assume it ships."
+  - id: F009
+    part: 1
+    severity: MEDIUM
+    file: "bom_runtime.py"
+    line: "1337-1338, 1354-1357"
+    description: "The OpenAI path replaces options with CONFIG_G and then forces think false. The native path overlays CONFIG_G onto client options, so keys that are not in CONFIG_G survive, and also forces think false."
+    expected: "Locked sampling keys always win. Extra client options are either documented or stripped."
+    actual: "Locked keys are overwritten. Native requests can still pass other option keys."
+    suggested_fix: "Replace the options object on the native path the same way the OpenAI path does."
+  - id: F010
+    part: 1
+    severity: MEDIUM
+    file: "bom_runtime.py"
+    line: 2223
+    description: "The gateway refuses to start unless Ollama's version string is exactly 0.40.13. i9 is 0.40.13, so the live gateway started. ubuntu-ai and the Mac Mini report Ollama 0.40.14."
+    expected: "One pinned Ollama version for the product and for the machines that run the same model tags."
+    actual: "Desktop pin 0.40.13. Fleet hosts 0.40.14."
+    suggested_fix: "Decide the pin in a new release. A running 0.40.14 host will fail closed if this 2.0.2 gateway is started there with the current check."
+  - id: F011
+    part: 1
+    severity: PASS
+    file: "bom_runtime.py"
+    line: "35-37, 1338, 1354"
+    description: "CONFIG_G is temperature 0.6, top_p 0.95, top_k 20, repeat_penalty 1.0, presence_penalty 0.0, num_ctx 8192, num_predict 4096. Both request builders force think false after reading the client flag."
+    expected: "Those locked values and think false."
+    actual: "Present on the shipping runtime and on D:\\BOMAI\\Modelfile.bomai-safe. ubuntu-ai bomai-safe shows the same values plus frequency_penalty 0."
+    suggested_fix: "none"
+  - id: F012
+    part: 1
+    severity: PASS
+    file: "bom_runtime.py"
+    line: "1558-1563, 2233-2234"
+    description: "With a config file, the gateway key must be 32 characters or more and is compared with hmac.compare_digest. A request with no Authorization header to 127.0.0.1:11435/api/version and /v1/models returned 401. The same check on the sandbox port 11436 also returned 401. The key value was not printed."
+    expected: "Loopback gateway fails closed when a key is configured."
+    actual: "i9 owner gateway and the sandbox gateway both returned 401."
+    suggested_fix: "none"
+  - id: F013
+    part: 1
+    severity: PASS
+    file: "install-bom-ai-linux.sh and install-bom-ai-mac.command"
+    line: 30
+    description: "Both unix wrappers embed the same zip. Inner runtime/bom_runtime.py is 119270 bytes, sha256=054ed6b1fec1d94b80eebadd9200e08afc452ae74c75346ba977dce856c3e0a3, matching D:\\BOMAI and the AppData 2.0.2 copy. models.json sha256=83c2a441b1e35ed6f2d2f985825a6a8e27fc5e453763f5a38ac589435d552a39."
+    expected: "Embedded gateway bytes match the installed gateway bytes."
+    actual: "Match."
+    suggested_fix: "none"
+  - id: F014
+    part: 1
+    severity: INFO
+    file: "Install-BOM-AI-Online.bat"
+    line: 382
+    description: "The initial desktop admin password expression includes NewGuid. No fixed password literal was on that line. Values were not printed. The seeded account name in the installer is owner@bomai.local."
+    expected: "Per-install password, not a shared literal."
+    actual: "Generation uses a guid. This pass did not read the live password out of the database."
+    suggested_fix: "none"
+  - id: F015
+    part: 2
+    severity: PASS
+    file: "D:\\BOMAI\\data\\open-webui\\webui.db"
+    line: 0
+    description: "Live OWUI is 0.12.5. ui.enable_signup is false. openai.api_base_urls and ollama.base_urls and rag.ollama.base_url point at 127.0.0.1:11435. SearXNG query URL is 127.0.0.1:8888 with language th-TH. ollama.enable is false, which matches the OpenAI-compatible gateway path."
+    expected: "Signup off, search and models routed through the loopback gateway."
+    actual: "Those keys match."
+    suggested_fix: "none"
+  - id: F016
+    part: 2
+    severity: INFO
+    file: "D:\\BOMAI\\data\\open-webui\\webui.db"
+    line: 0
+    description: "The function table on the live database has 0 rows. Models are bomai-safe and bomai-pro. This matches the 2.0.2 design that keeps intent, think suppression, and search in the gateway rather than OWUI filter rows."
+    expected: "No legacy pri5/pri8 filter rows in 2.0.2."
+    actual: "Empty function table on the owner database."
+    suggested_fix: "none"
+  - id: F017
+    part: 2
+    severity: MEDIUM
+    file: "owui version across hosts"
+    line: 0
+    description: "Desktop product is Open WebUI 0.12.5. ubuntu-ai bomai-owui on 127.0.0.1:3000 is 0.12.4. Mac Mini 127.0.0.1:3000 is 0.12.0. C2 container image is ghcr.io/open-webui/open-webui:v0.13.0, up 21 minutes at the first probe, bound to 127.0.0.1:3000."
+    expected: "One OWUI version if these instances are supposed to be the same product."
+    actual: "Four versions. C2 is the shared bomllm UI, not the desktop installer."
+    suggested_fix: "Record which version each host is allowed to run. Do not treat C2 0.13.0 as the desktop package."
+  - id: F018
+    part: 2
+    severity: INFO
+    file: "C:\\Users\\amd\\AppData\\Local\\BOMAI-QC-STRESS56442"
+    line: 0
+    description: "A QC tree is running and was not touched. OWUI pid 83468 has been on 127.0.0.1:18080 since 07:09. Gateway pid 45360 has been on 127.0.0.1:11436 since 07:32:32. Middleware sha256=575a5630a56250d94008d90436f8e3c4df1400399b92ea30ed06aeb4eb8e1a31. Runtime sha256=6e708cc571f54b044a1c2eb432418df6263d15c20a58e9781a6c4c1b71561bfa. Function bomai_han_guard_hf1 is active and global. That runtime hash is neither the stock gateway nor the candidate hash recorded in art 56566."
+    expected: "Survey leaves this lane alone."
+    actual: "Observed only."
+    suggested_fix: "The lane that owns the sandbox should say whether this hash is the intended HF-1 build."
+  - id: F019
+    part: 2
+    severity: PASS
+    file: "i9 listen table"
+    line: 0
+    description: "Owner and sandbox listeners seen for 8080, 18080, 8888, 18888, 11434, 11435, and 11436 are all 127.0.0.1."
+    expected: "Desktop inference ports stay on loopback."
+    actual: "They are on loopback."
+    suggested_fix: "none"
+  - id: F020
+    part: 2
+    severity: INFO
+    file: "config/models.json"
+    line: 0
+    description: "The 2.0.2 catalog lists light and pro aliases and does not set a vision flag. The older 0.3.1 catalog marked vision true on several rows. Light-tier vision limits were already reported in art 56566 and were not re-tested here."
+    expected: "Catalog states vision per tier."
+    actual: "2.0.2 catalog has no vision field."
+    suggested_fix: "Add an explicit vision flag per tier in the next catalog."
+  - id: F021
+    part: 3
+    severity: PASS
+    file: "/home/siamcar/domains/bomai.app"
+    line: 0
+    description: "Three release.json copies are byte-identical. sha256=7dd532e9a904676822bc8f18dc4c51e8115bfef47929d2722197f94867307ba5. On-disk assets match that file: bat sha256=2d19bad72a85814e5d868a4c4eb042ea236aa36075fb024dba588757ee7b1288 size 338303, linux sha256=3ab24b69deeb827f5835a67728f1cfafaf1663bee02fd24bb318475f6a22c1ee size 66335, mac zip sha256=c5c1273291a92a0675cbc90dddf32effa8fe821bc34a55be989adcf95b3da017 size 66487."
+    expected: "One release document and matching files."
+    actual: "Match, version 2.0.2."
+    suggested_fix: "none"
+  - id: F022
+    part: 3
+    severity: PASS
+    file: "nginx bomai-app.conf and live HTTP"
+    line: 0
+    description: "From i9, /download returned 302 to /th/download and /how-to-use returned 301 to https://siamcafebook.com/bomai/manual/. The nginx vhost has the same howto and manual redirects."
+    expected: "Download locale redirect and howto 301."
+    actual: "Both observed."
+    suggested_fix: "none"
+  - id: F023
+    part: 3
+    severity: MEDIUM
+    file: "bomai.app from i9"
+    line: 0
+    description: "The first three HTTPS downloads from i9 to bomai.app timed out after about 21 seconds. The mac zip then returned 200, and the download and howto HEAD requests succeeded. CAT itself is listening on 122.155.168.7:443 and the files are present."
+    expected: "Stable connect from the build machine to the download host."
+    actual: "Intermittent timeouts, then success. Not a missing-file outage."
+    suggested_fix: "Watch the path from i9 to 122.155.168.7:443. The origin files do not need a rebuild."
+  - id: F024
+    part: 3
+    severity: HIGH
+    file: "/home/siamcar/domains/bomai.app/public_html/user/pages"
+    line: 0
+    description: "209 markdown files. Language file counts: ar de es fr hi id ja ko ms pt ru th vi zh = 13, en = 12, it = 1, unsuffixed = 14. The only Italian file found is 02.download/default.it.md. English is one short of Thai because Thai has an extra 01.home/_siamcafebook stub."
+    expected: "Each shipped language has the same page set."
+    actual: "Italian is a single download page."
+    suggested_fix: "Finish or unpublish the Italian locale. Do not count it as one of a complete 15-language set."
+  - id: F025
+    part: 3
+    severity: MEDIUM
+    file: "user/pages"
+    line: 0
+    description: "A tree grep found 0 pages containing the current asset hash and 0 pages containing the text 2.0.2 or 2.0.3. The download screen may still render the hash from release.json in the theme. That rendered page was not opened in a browser in this pass."
+    expected: "The page the user sees shows the same sha256 as the file."
+    actual: "Files match release.json. The visible download page was not confirmed."
+    suggested_fix: "Open /th/download in a browser and compare the printed hash to sha256=2d19bad72a85814e5d868a4c4eb042ea236aa36075fb024dba588757ee7b1288."
+  - id: F026
+    part: 3
+    severity: MEDIUM
+    file: "/etc/nginx/conf.d/bomai-app.conf"
+    line: 0
+    description: "The bomai.app vhost sets nosniff, Referrer-Policy strict-origin-when-cross-origin, X-Frame-Options SAMEORIGIN, and HSTS max-age 63072000. content-security-policy appears 0 times. No Access-Control-Allow-Origin was in the surveyed header lines."
+    expected: "A Content-Security-Policy on the public site."
+    actual: "CSP is absent. The other four headers are present."
+    suggested_fix: "Add a CSP in a reviewed nginx change. This survey did not edit the vhost."
+  - id: F027
+    part: 3
+    severity: PASS
+    file: "/etc/nginx/ssl/bomai/fullchain.pem"
+    line: 0
+    description: "Certificate subject CN=bomai.app. notBefore 2026-10-03. notAfter 2027-01-01. The live handshake on 122.155.168.7:443 with SNI bomai.app returned that same certificate."
+    expected: "Unexpired certificate for bomai.app."
+    actual: "Valid. About eight weeks of life remained on the survey date."
+    suggested_fix: "Renew before 2027-01-01."
+  - id: F028
+    part: 3
+    severity: INFO
+    file: "user/pages"
+    line: 0
+    description: "Top folders are 01.home, 02.download, 03.features, 04.faq, 05.benchmark, 06.requirements, and manual. That is wider than a 6 by 15 page grid. 16 language suffixes are present, with Italian incomplete as in F024."
+    expected: "Spec text said 90 pages."
+    actual: "209 markdown files."
+    suggested_fix: "Update the page inventory. Do not treat 90 as the current count."
+  - id: F029
+    part: 4
+    severity: PASS
+    file: "GitHub tag v2.0.0 and Hugging Face siamcafe/bomai"
+    line: 0
+    description: "Downloaded this pass, all HTTP 200. GitHub and Hugging Face bat, linux script, and mac zip match the CAT files and release.json. sha256 values are the three in F021. The older bat hash cited by art 56397 is not what these URLs return now."
+    expected: "Mirror bytes match the CDN files."
+    actual: "Match."
+    suggested_fix: "none"
+  - id: F030
+    part: 4
+    severity: HIGH
+    file: "https://raw.githubusercontent.com/siamcafe/bomai/main/README.md"
+    line: "10, 23-43, 47-61, 76-88, 117-122"
+    description: "The README badge says v4.0.0. The benchmark section cites GOD CONFIG v7.0, Han leak 0, and 250/250 zero-Han. Install snippets say an 86KB Windows file saved as Install-BOM-AI.bat, and macOS curl of install-bom-ai-mac.sh. Tiers are V4B, V8B, and V12B. The shipping product is installer 2.0.2, a 338303-byte Install-BOM-AI-Online.bat, and a mac zip. The 2.0.2 runtime still has the Han gap in F001."
+    expected: "README describes the current installer, asset names, and measured Han behavior."
+    actual: "README describes a different version line and claims a Han result the shipping runtime does not enforce."
+    suggested_fix: "Replace the README from the 2.0.2 release notes and the live asset names. Do not leave the 250/250 claim up while F001 is open."
+  - id: F031
+    part: 4
+    severity: MEDIUM
+    file: "GitHub release tag v2.0.0"
+    line: 0
+    description: "The asset bytes are the 2.0.2 installer, and the tag name is still v2.0.0."
+    expected: "Tag name matches release.json version."
+    actual: "Tag v2.0.0, content 2.0.2."
+    suggested_fix: "Publish a v2.0.2 tag or rename the release so the tag matches the bytes."
+  - id: F032
+    part: 4
+    severity: MEDIUM
+    file: "Hugging Face siamcafe/bomai README"
+    line: 0
+    description: "https://huggingface.co/siamcafe/bomai/raw/main/README.md returned the text Entry not found. The windows, linux, and macos files themselves downloaded."
+    expected: "A model-card README that matches the installer version."
+    actual: "No README at that path."
+    suggested_fix: "Add a short card that points at the three files and version 2.0.2."
+  - id: F033
+    part: 4
+    severity: INFO
+    file: "README.md license badge"
+    line: 10
+    description: "The README badge says MIT. The Windows installer terms name component licenses: Ollama MIT, Open WebUI BSD-3, Python PSF. The repo LICENSE file body was not fetched."
+    expected: "One license statement for the installer and accurate component notices."
+    actual: "Badge and installer terms were both seen. The LICENSE file was not opened."
+    suggested_fix: "Read LICENSE on the next doc pass and make the badge match it."
+  - id: F034
+    part: 5
+    severity: HIGH
+    file: "ubuntu-ai ollama.service"
+    line: 0
+    description: "systemctl show reported ActiveState=activating, SubState=auto-restart, Result=exit-code, NRestarts=62408. A different process, pid 1933681, has been running /usr/local/bin/ollama serve since 2026-11-03 23:24 and the API on 127.0.0.1:11434 returned 0.40.14. Nothing was killed or restarted."
+    expected: "One Ollama service, not a crash loop beside a live server."
+    actual: "The unit has restarted tens of thousands of times while another serve process holds the port."
+    suggested_fix: "Inspect the unit's exit reason before any restart. Do not stop pid 1933681 as part of a survey."
+  - id: F035
+    part: 5
+    severity: INFO
+    file: "ubuntu-ai bomai-gateway.service"
+    line: 0
+    description: "inactive, dead, Result=success, NRestarts=0. bomai-owui and bomai-searxng were active. OWUI on that host is 0.12.4."
+    expected: "Gateway running only if that host is supposed to use the desktop gateway."
+    actual: "Unit is stopped cleanly, not crash-looping."
+    suggested_fix: "none until an owner asks that host to run the 11435 gateway."
+  - id: F036
+    part: 5
+    severity: PASS
+    file: "ubuntu-ai bomai-safe modelfile"
+    line: 0
+    description: "Parameters include temperature 0.6, top_p 0.95, top_k 20, repeat_penalty 1, presence_penalty 0, num_ctx 8192, num_predict 4096, frequency_penalty 0. The first FROM blob is sha256-e2e460e979a24bba9187854b96e79fbab5561b26c2493ffcee00bf659212fd67, the same layer id stored on the desktop install records."
+    expected: "Locked sampling and the desktop weight blob."
+    actual: "Match, plus an explicit frequency penalty of 0."
+    suggested_fix: "none"
+  - id: F037
+    part: 5
+    severity: MEDIUM
+    file: "ollama tags on ubuntu-ai and Mac Mini"
+    line: 0
+    description: "siamcafe/bom-ai:light-v2.0.0 manifest digest starts 3f45ce62b340c2f4 on ubuntu-ai and cd7ef6f412aac178 on the Mac Mini. pro-v2.0.0 starts 71be264b1d71b7f7 on ubuntu-ai and 3e59e1fe86b43105 on the Mac Mini."
+    expected: "The same tag name resolves to the same manifest on each host, or the difference is an intentional per-architecture build."
+    actual: "Manifest prefixes differ. The ubuntu-ai bomai-safe weight blob still matches the desktop layer id in F036."
+    suggested_fix: "Record whether the Mac tags are a different build. Do not assume the tag name means the same bytes."
+  - id: F038
+    part: 5
+    severity: HIGH
+    file: "Mac Mini ollama tags"
+    line: 0
+    description: "ollama show bomai-safe returned model not found. bomai-pro:latest, bomai-mini:latest, and bomai-gemma3:latest were listed with the same manifest prefix 5bd9e2dc6f018a1b."
+    expected: "bomai-safe exists, and pro, mini, and gemma are different models."
+    actual: "The desktop alias is missing. Three names share one manifest prefix."
+    suggested_fix: "Inventory those three names before any pull. Do not overwrite a live tag during a survey."
+  - id: F039
+    part: 5
+    severity: HIGH
+    file: "Mac Mini listeners"
+    line: 0
+    description: "The first probe showed TCP listeners on *:11434 and *:8081. Gateway 127.0.0.1:11435 returned HTTP 200 with no credentials. lsof shows python pid 71209 on that loopback port, command /Users/bom/BOM-AI/package/shared/bom_runtime.py. ollama serve pid 35069 is the 0.40.14 binary. This is the older Mac package, not the 2.0.2 release directory used on i9."
+    expected: "Ollama bound to loopback, and the gateway using the 2.0.2 key check."
+    actual: "Ollama is on all interfaces. The legacy gateway answers /api/version without a bearer token. It is loopback-only."
+    suggested_fix: "Confirm the all-interfaces bind is intentional. Plan a 2.0.2 gateway cutover separately. This survey did not change the plist, the bind, or the process."
+  - id: F040
+    part: 5
+    severity: MEDIUM
+    file: "ubuntu-ai and C2 LiteLLM containers"
+    line: 0
+    description: "ubuntu-ai litellm image is ghcr.io/berriai/litellm-non_root:v1.106.5 published on 0.0.0.0:4000. litellm-staging on that host is still v1.106.4. C2 image is bomllm/litellm:1.106.5-pil2 on the tailscale address and 127.0.0.1:4000. art 56397 recorded the pin as 1.106.4."
+    expected: "The pinned image, or a written pin change."
+    actual: "Running image is 1.106.5 on both production hosts. Staging on ubuntu-ai is still 1.106.4. The CLI version inside the container was not collected because the follow-up session hung."
+    suggested_fix: "Confirm 1.106.5 is the accepted pin. Do not roll the container back from this survey."
+  - id: F041
+    part: 5
+    severity: INFO
+    file: "C2 109.123.233.171"
+    line: 0
+    description: "Read-only. Disk 28 percent used. No local Ollama API. OWUI, LiteLLM, and SearXNG containers are up. Cron runs the bomai-v3 health, token-residency, and latency scripts. Journal grep for bomai, open-webui, searx, and litellm errors returned 0 lines. No file was written."
+    expected: "Observe only."
+    actual: "Observed. Load average was about 7 to 9."
+    suggested_fix: "none"
+  - id: F042
+    part: 5
+    severity: BLOCKED
+    file: "bom@192.168.1.38:99"
+    line: 0
+    description: "SSH connect timed out. No AM4 facts were collected."
+    expected: "A read-only probe if the host is part of the survey."
+    actual: "Unreachable on port 99 from i9 within the connect timeout."
+    suggested_fix: "Retry from a host that can reach AM4. Do not change firewall rules from this report."
+  - id: F043
+    part: 5
+    severity: PASS
+    file: "disk free"
+    line: 0
+    description: "Free space is above 10 percent on every measured volume. i9 C: 62.2 percent used. ubuntu-ai root 39 percent used. Mac Mini 2 percent used. CAT 11 percent used. C2 28 percent used."
+    expected: "Warn below 10 percent free."
+    actual: "No volume is in that band."
+    suggested_fix: "none"
+  - id: F044
+    part: 6
+    severity: MEDIUM
+    file: "D:\\BOMAI\\state\\runtime.json"
+    line: 0
+    description: "The gateway key is stored in the install's runtime.json. The value was withheld. Length is 64 characters. icacls on D:\\BOMAI shows NT AUTHORITY\\Authenticated Users Modify, inherited. Any local account can read or change that file."
+    expected: "Only the installing user can read the gateway key file."
+    actual: "Authenticated Users have Modify on the install root."
+    suggested_fix: "Tighten the ACL on state\\runtime.json to the owner. Do not print the key while doing it."
+  - id: F045
+    part: 6
+    severity: MEDIUM
+    file: "C:\\Users\\amd\\AppData\\Local\\BOMAI\\state\\runtime.json"
+    line: 0
+    description: "That older runtime.json also contains a gateway key. icacls grants DESKTOP-PE1B0VH\\CodexSandboxUsers Read. The AppData tree is not the live root, and the key is still readable by that group."
+    expected: "Retired state files are not readable by other local groups."
+    actual: "A sandbox users group has Read."
+    suggested_fix: "Remove the extra ACE after the owner decides the AppData tree is retired."
+  - id: F046
+    part: 6
+    severity: PASS
+    file: "bom_runtime.py"
+    line: "2225-2243"
+    description: "The source default for the gateway key is empty, and --config rejects a key shorter than 32 characters. No literal key was found. Secret-shaped hits in the scanner were the word gateway_key, token-count fields, and the password word list inside the phishing detector."
+    expected: "No key baked into the source."
+    actual: "Key comes from the per-install config."
+    suggested_fix: "none"
+  - id: F047
+    part: 6
+    severity: PASS
+    file: "Install-BOM-AI-Online.bat"
+    line: 2142
+    description: "A scanner hit on sk- was the substring inside the words disk-space on the comment that says not to mask a disk-space error. No private key block was in the bat."
+    expected: "No embedded API key."
+    actual: "False positive from the word disk-space."
+    suggested_fix: "none"
+  - id: F048
+    part: 7
+    severity: INFO
+    file: "127.0.0.1:11434 /api/generate"
+    line: 0
+    description: "One warm sample against the already loaded model bomai-qc-light:latest. num_predict 8. Wall time 0.421 seconds. prompt_eval_duration 204121000 ns. eval_duration 108510000 ns. total_duration 402727200 ns. Output length 37 characters, Han count 0, done_reason length. This is the sandbox model, not owner bomai-safe, and not a cold start."
+    expected: "A tier matrix with TTFT and a load run."
+    actual: "One warm light-proxy sample only."
+    suggested_fix: "Run the tier matrix when the owner GPU is free and bomai-safe is the resident model."
+  - id: F049
+    part: 7
+    severity: NOT_RUN
+    file: "load and Pro tier"
+    line: 0
+    description: "No concurrent load, no GPU sweep, and no Pro generation. /api/ps showed bomai-qc-light resident. A second model load would have moved the owner's GPU and the QC lane."
+    expected: "Throughput and Pro numbers."
+    actual: "Not run, on purpose."
+    suggested_fix: "Schedule a window. Do not run it against the live QC sandbox without that lane's owner."
+  - id: F050
+    part: 8
+    severity: PASS
+    file: "runtime sha chain"
+    line: 0
+    description: "Unix embedded runtime, D:\\BOMAI on-disk runtime, and the AppData 2.0.2 runtime file share sha256=054ed6b1fec1d94b80eebadd9200e08afc452ae74c75346ba977dce856c3e0a3. The live gateway command line points at the D:\\BOMAI file and the process started at 04:30, after that install."
+    expected: "Source payload, installed file, and running command line are the same bytes."
+    actual: "Hashes match and the command line points at that path. Memory was not dumped."
+    suggested_fix: "none"
+  - id: F051
+    part: 8
+    severity: PASS
+    file: "installer asset chain"
+    line: 0
+    description: "CAT disk, the three release.json copies, the GitHub v2.0.0 assets, and the Hugging Face windows/linux/macos files share the three hashes in F021."
+    expected: "Build, CDN, GitHub, and Hugging Face match."
+    actual: "Match for the three current assets."
+    suggested_fix: "none"
+  - id: F052
+    part: 8
+    severity: INFO
+    file: "QC sandbox runtime"
+    line: 0
+    description: "Sandbox runtime sha256=6e708cc571f54b044a1c2eb432418df6263d15c20a58e9781a6c4c1b71561bfa. Stock is sha256=054ed6b1fec1d94b80eebadd9200e08afc452ae74c75346ba977dce856c3e0a3. art 56566 named candidate sha256=41b10b4a768c384f7267a9dc177247bbf36557da3d57f62de370113701d05d2b. The file on disk now matches none of those three identities. See F018."
+    expected: "A recorded hash for whatever the sandbox is running."
+    actual: "Unrecorded hash, process started 07:32."
+    suggested_fix: "The sandbox lane should publish the hash. This survey did not roll it back."
+  - id: F053
+    part: 8
+    severity: INFO
+    file: "D:\\BOMAI\\data\\open-webui\\webui.db"
+    line: 0
+    description: "The live database opened read-only. It has one admin user, two models, and zero chats. An earlier count of the table named group failed because that name is reserved in SQL. That was a query mistake, not a damaged file."
+    expected: "Database opens and the product tables are readable."
+    actual: "Readable."
+    suggested_fix: "none"
+untouched:
+  - "No product file, database, service, crontab, nginx, sshd, or DNS write."
+  - "No process kill of Ollama, OWUI, LiteLLM, or the QC sandbox. The only processes stopped were this survey's own hung SSH client to C2."
+  - "C1 was not contacted."
+  - "AM4 was unreachable and was not retried into a change."
+residual_risk:
+  - "Shipping Han and refusal behavior is still the stock 2.0.2 gateway."
+  - "GitHub README can send users to the wrong installer names and a Han claim the code does not keep."
+  - "ubuntu-ai ollama.service restart storm is still running beside a healthy serve process."
+  - "Mac Ollama is on all interfaces and bomai-safe is absent."
+  - "AppData E-DATA and the pointer files still disagree with the live D:\\BOMAI root."
+  - "Italian locale is one page."
+verify:
+  - "Local hashes and process command lines on i9."
+  - "CAT sha256sum of the three assets and three release.json copies."
+  - "HTTP 200 downloads from GitHub and Hugging Face with the same hashes."
+  - "SSH read-only probes of ubuntu-ai, Mac Mini, CAT, and C2. AM4 timed out."
+  - "Unauthenticated GET to 127.0.0.1:11435 returned 401."

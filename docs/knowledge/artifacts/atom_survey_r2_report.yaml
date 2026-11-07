@@ -1,0 +1,514 @@
+project: bomai
+step: survey_atom_round2_post_fix
+spec: hub art#57235
+context:
+  - 56602
+  - 56648
+  - 56703
+  - 56807
+  - 56940
+  - 56671
+  - 56678
+  - 57221
+surveyed_at: "2026-11-07T07:10:00+07:00"
+mode: read-only
+tool: grok
+model: "Grok 4.7"
+host: DESKTOP-PE1B0VH
+changes_made: 0
+services_restarted: 0
+processes_killed: 0
+c1_touched: false
+summary:
+  total_checks: 65
+  pass: 55
+  fail: 2
+  warn: 8
+  new_issues: 7
+  junk_found: 169
+  junk_total_bytes: 70566164070
+  recommendation: inspect
+verdict: >
+  The v2.0.3 fixes that were supposed to stay in place are still in place
+  on the i9 shipping tree, GitHub, Hugging Face, and bomai.app. Two failures
+  are live: i9 Ollama is not running, and the Mac gateway process is still
+  the pre-HF-1 runtime. Ubuntu-ai is healthy now, but its enabled unit will
+  publish Ollama on 0.0.0.0 at the next boot.
+
+checks:
+  - id: F005
+    verdict: PASS
+    evidence: "D:\\BOMAI\\state\\install.json release=2.0.3 status=COMPLETE. build is stale; see N003."
+  - id: F008
+    verdict: PASS
+    evidence: "GitHub main build/pkg-win/shared/bom_runtime.py HTTP 200, 133774 bytes, sha256 f19c4193ec2f0a54bd8cecd75b711973a3322dee17e5a1ebad36117854f299b7. Same hash on D:\\BOMAI\\releases\\2.0.3\\b20261106233912\\bom_runtime.py and on the 2.0.2 leaf."
+  - id: F024
+    verdict: PASS
+    evidence: "CAT find user/pages *.it.md = 0. Whole bomai.app public_html *.it.md = 0. th.md=13 en.md=12."
+  - id: F025
+    verdict: PASS
+    evidence: "Browser picker Windows+8GB shows version 2.0.3 and SHA-256 88428a5958…d84f8faa. Page HTML contains all three release.json prefixes."
+  - id: F026
+    verdict: PASS
+    evidence: "Public responses include script-src 'unsafe-eval'. CAT bomai-app.conf line 48 matches. nginx master pid 4806, workers refreshed 2026-11-07 02:20, no restart by this survey."
+  - id: F027
+    verdict: PASS
+    evidence: "CN=bomai.app notBefore 2026-10-03 notAfter 2027-01-02 06:59:59 +07. 56 days left."
+  - id: F030
+    verdict: PASS
+    evidence: "raw README.md HTTP 200, 8221 bytes, v2.0.3 count 9, v4.0.0 count 0."
+  - id: F031
+    verdict: PASS
+    evidence: "gh release list: v2.0.3 is Latest. v4.0.0 release is gone. v0.3.1 and v0.3.2 remain, as left by art#56703."
+  - id: F032
+    verdict: PASS
+    evidence: "https://huggingface.co/siamcafe/bomai/raw/main/README.md HTTP 200, 910 bytes, commit 0f049c13."
+  - id: F034
+    verdict: PASS
+    evidence: "Checklist text says disabled. That was superseded by art#56671. Live unit is enabled, inactive, dead, NRestarts=0, Result=success. Drop-ins restart-limit.conf and override.conf exist. Manual serve pid 1933681 holds 127.0.0.1:11434, version 0.40.14. See N002 for the bind that the enabled unit will apply later."
+  - id: F038
+    verdict: PASS
+    evidence: "Mac ollama list has bomai-safe:latest id 63934765a776, 3.4 GB."
+  - id: F039
+    verdict: PASS
+    evidence: "netstat shows one listener, tcp4 127.0.0.1.11434. Plist OLLAMA_HOST=127.0.0.1:11434. LAN probe to 192.168.1.254:11434 returned HTTP 000. Version 0.40.14 on loopback."
+  - id: F044
+    verdict: PASS
+    evidence: "D:\\BOMAI\\state\\runtime.json ACL is SYSTEM:(F) and amd:(F) only. No Authenticated Users ACE on the file. The D:\\BOMAI directory still inherits Authenticated Users:(M); that residual was already recorded in art#56648."
+  - id: F045
+    verdict: PASS
+    evidence: "C:\\Users\\amd\\AppData\\Local\\BOMAI\\state\\runtime.json is absent, so the CodexSandboxUsers ACE is absent. A 10-byte stub directory came back; see N007."
+  - id: P2_EGRESS
+    verdict: PASS
+    evidence: "Shipping runtime is 2584 lines. EgressEmitter is present. allow_han count is 0. bomai_han_policy.py POLICY_ID=strict_no_han_v1 UNICODE_VERSION=18.0.0 POLICY_TABLE_SHA256=0974788df77639bc1500e2fa66bbcc23a5d1f4fb737e603ab0ef8e7e4552809b. Ranges cover CJK radicals, Extension A through I, and compatibility ideographs. emit() and send_json() call guarded() before the write. Round 1 had 19 self.wfile.write sites and a BMP-only regex."
+  - id: P2_CONFIG
+    verdict: PASS
+    evidence: "CONFIG_G is temperature 0.6, top_p 0.95, top_k 20, repeat_penalty 1.0, presence_penalty 0.0, num_ctx 8192, num_predict 4096. SYSTEM_PROMPT is the v9.1 candidate text, including the translation exception and the no-Han line. openai_request forces think false and replaces options with CONFIG_G."
+  - id: P2_AUTH
+    verdict: PASS
+    evidence: "do_POST returns unless authorized(). do_GET authorizes every path except /healthz. Startup rejects a gateway key shorter than 32 characters. Live GET http://127.0.0.1:11435/v1/models returned 401."
+  - id: P2_WRITES
+    verdict: PASS
+    evidence: "wfile.write count is 3: EgressEmitter.emit, EgressEmitter.done (fixed ASCII DONE), and _send_json_unguarded. Generation assigns the emitter before upstream output. /healthz and non-generation replies still use the unguarded JSON writer."
+  - id: P2_SAFETY
+    verdict: WARN
+    evidence: "Known F002 is still open. is_phishing_request refuses only when deception, bank, and a harmful action are all present. ระเบิด and อาวุธ are only in QUALITY_SAFETY_EXCLUDE, which skips the quality rewrite and does not refuse before generation."
+  - id: P2_OPTIONS
+    verdict: WARN
+    evidence: "Known F009 is still deferred. native_request keeps client option keys and overlays CONFIG_G. The OpenAI path replaces options before that overlay, so extra options survive on the native path only."
+  - id: P2_MODELFILE
+    verdict: WARN
+    evidence: "D:\\BOMAI\\releases\\2.0.3\\b20261106233912\\Modelfile.bomai-safe still says ตอบเป็นภาษาไทยเสมอ and has no Han line. The runtime SYSTEM_PROMPT is the newer text. See N004."
+  - id: S_I9_OLLAMA
+    verdict: FAIL
+    evidence: "No ollama process. Nothing listens on 11434. GET /api/version refused. Not started. See N001."
+  - id: S_I9_GW
+    verdict: PASS
+    evidence: "pid 24384, 127.0.0.1:11435, command is the 2.0.3 bom_runtime.py, unauthenticated request returns 401."
+  - id: S_I9_OWUI
+    verdict: PASS
+    evidence: "pid 8304, 127.0.0.1:8080, {\"version\":\"0.12.5\"}."
+  - id: S_I9_SEARX_TREE
+    verdict: WARN
+    evidence: "127.0.0.1:8888 HTTP 200, listener pid 53304. Parent chain is powershell start-searxng.ps1 from releases\\2.0.2\\b20261106042726. Gateway and OWUI are the 2.0.3 leaf. See N006."
+  - id: S_I9_DISK
+    verdict: PASS
+    evidence: "C: 390823055360 free, 61.8 percent used. D: 3712786210816 free, 7.2 percent used. E: 1220684939264 free, 39.0 percent used."
+  - id: S_UBU_SERVE
+    verdict: PASS
+    evidence: "pid 1933681 /usr/local/bin/ollama serve, 127.0.0.1:11434, version 0.40.14. OWUI pid 2689 version 0.12.4 on 127.0.0.1:3000. SearXNG gunicorn HTTP 200 on 127.0.0.1:8888."
+  - id: S_UBU_UNIT
+    verdict: PASS
+    evidence: "ollama.service enabled, inactive, NRestarts=0, StartLimitBurst=5, Restart=on-failure, RestartUSec=5s."
+  - id: S_UBU_OWUI
+    verdict: PASS
+    evidence: "open-webui pid 2689, version 0.12.4, 127.0.0.1:3000."
+  - id: S_UBU_SEARX
+    verdict: PASS
+    evidence: "gunicorn pids 2687 and 2829, 127.0.0.1:8888, HTTP 200."
+  - id: S_UBU_LITE
+    verdict: PASS
+    evidence: "litellm ghcr.io/berriai/litellm-non_root:v1.106.5 on 0.0.0.0:4000. litellm-staging v1.106.4 on the tailscale address only. Same split recorded as F040."
+  - id: S_UBU_DISK
+    verdict: PASS
+    evidence: "913G size, 339G used, 528G avail, 40 percent."
+  - id: S_UBU_NEXTBOOT_BIND
+    verdict: WARN
+    evidence: "override.conf dated Oct 17 sets OLLAMA_HOST=0.0.0.0:11434. The unit is enabled and not running, so the live process is still loopback. The next start applies the override. See N002."
+  - id: S_MAC_OLLAMA
+    verdict: PASS
+    evidence: "root pid 63159, version 0.40.14, bound to 127.0.0.1:11434."
+  - id: S_MAC_TAG
+    verdict: PASS
+    evidence: "bomai-safe:latest present."
+  - id: S_MAC_PORT
+    verdict: PASS
+    evidence: "127.0.0.1:11435 pid 71209 and 127.0.0.1:3000 pid 755 are listening. The gateway command still points at the old file. See N005."
+  - id: S_MAC_GATEWAY_CODE
+    verdict: FAIL
+    evidence: "Running file /Users/bom/BOM-AI/package/shared/bom_runtime.py is 695 lines, sha256 f3a7aa3ce36d1eca8a8671d7e8e15ecf9b3e97f77ad0cce3145a9bc667af069c, EgressEmitter count 0. A second copy at shared/bom_runtime.py has the same hash. Process has --expected-version 0.40.10 and has been up since 31 Oct. Shipping HF-1 hash is f19c4193."
+  - id: S_MAC_DISK
+    verdict: PASS
+    evidence: "926Gi volume, 13Gi used, 654Gi avail, 2 percent."
+  - id: S_CAT_NGINX
+    verdict: PASS
+    evidence: "nginx 1.29.4, master pid 4806 since 2026-10-30 00:31, workers started 2026-11-07 02:20."
+  - id: S_CAT_SITE
+    verdict: PASS
+    evidence: "https://bomai.app/ HTTP 302 to /th. /th/download HTTP 200. Cert valid. Disk 439G, 46G used, 371G avail, 11 percent. Grav cache 24M."
+  - id: S_CAT_DISK
+    verdict: PASS
+    evidence: "371G available, 11 percent used."
+  - id: S_C2_OWUI
+    verdict: PASS
+    evidence: "open-webui ghcr.io/open-webui/open-webui:v0.13.0, 127.0.0.1:3000, healthy. Read-only docker ps. C1 was not contacted."
+  - id: S_C2_LITE
+    verdict: PASS
+    evidence: "litellm bomllm/litellm:1.106.5-pil2, up 26 hours, loopback and tailscale 4000."
+  - id: S_C2_SEARX
+    verdict: PASS
+    evidence: "bomllm-searxng-1 image searxng/searxng:2026.11.6-ac11e14c5. Network aliases include searxng."
+  - id: S_C2_DISK
+    verdict: PASS
+    evidence: "394G, 101G used, 277G avail, 27 percent."
+  - id: S_NAS_BACKUP
+    verdict: PASS
+    evidence: "/volume1/docker/backups/bomai/v2.0.3-backup-20261106 is present. gateway/bom_runtime.py sha256 f19c4193ec2f0a54bd8cecd75b711973a3322dee17e5a1ebad36117854f299b7, 133774 bytes. Tree includes blueprints, configs, webui.db 786432 bytes, and SHA256SUMS.txt. du -sh of the backup dir is 1.4M."
+  - id: S_NAS_DISK
+    verdict: PASS
+    evidence: "/volume1 5.3T, 1.6T used, 3.7T avail, 30 percent."
+  - id: D_BAT
+    verdict: PASS
+    evidence: "406263 bytes sha256 88428a59580e02ef0ee3d6f10db2253faadef877b2864cb2e18a0fcdd84f8faa on bomai.app, GitHub v2.0.3, and Hugging Face."
+  - id: D_SH
+    verdict: PASS
+    evidence: "87090 bytes sha256 d27178cef858a4600af7697670620b859e8792339f8ae465412bdc99b8aefd42 on all three channels."
+  - id: D_ZIP
+    verdict: PASS
+    evidence: "87242 bytes sha256 70ff5dfa80bd7722eafbef41946089caf749bb0c698f8c876e3075b93a058e07 on all three channels."
+  - id: D_RELEASE
+    verdict: PASS
+    evidence: "release.json 1262 bytes sha256 0a9cd85b6c3af9a21d77f319fb0ae1a199c4e286d75ffca6711fbe55401d250a on bomai.app and Hugging Face. GitHub asset name is release_203_ready.json with the same digest. A path named release.json on the GitHub tag returns 404."
+  - id: HF_FILES
+    verdict: PASS
+    evidence: "Siblings are .gitattributes, README.md, linux/install-bom-ai-linux.sh, macos/install-bom-ai-mac.zip, release.json, windows/Install-BOM-AI-Online.bat. No extra stale blob found. Downloaded installer bytes match the other channels."
+  - id: W_HOME
+    verdict: PASS
+    evidence: "Browser snapshot of https://bomai.app/th contains the text เวอร์ชัน 2.0.3. HTML count of 2.0.3 is 2. v4.0.0 count is 0."
+  - id: W_PICKER
+    verdict: PASS
+    evidence: "Clicked Windows (pressed) and 8 GB (pressed). Card text: BOM AI Light สำหรับ Windows, เวอร์ชัน 2.0.3, SHA-256 88428a5958…d84f8faa, download link ดาวน์โหลด BOM AI Light."
+  - id: W_IT
+    verdict: PASS
+    evidence: "https://bomai.app/it/download HTTP 404, body is the Grav missing-page title. Round 3 still saw a 200 language fallback. That fallback is gone."
+  - id: W_LANG
+    verdict: PASS
+    evidence: "Opened the nav language list. Entries are English, 中文, 日本語, 한국어, Tiếng Việt, Bahasa Indonesia, Bahasa Melayu, Español, Français, Deutsch, Português, Русский, العربية, हिन्दी. No Italian entry. HTML has zero /it/ links."
+  - id: W_CSP
+    verdict: PASS
+    evidence: "Response header contains 'unsafe-eval'."
+  - id: W_NAV
+    verdict: PASS
+    evidence: "Burger control changed from เปิดเมนู collapsed to expanded, and the menu exposed หน้าแรก, ฟีเจอร์, คำถามที่พบบ่อย, เปรียบเทียบโมเดล, ความต้องการ, คู่มือ, ดาวน์โหลด."
+  - id: W_JS
+    verdict: PASS
+    evidence: "gsap.min.js, scrolltrigger.min.js, app.js, and navigation.js each returned HTTP 200."
+  - id: W_MANUAL
+    verdict: PASS
+    evidence: "https://bomai.app/th/manual redirects to https://siamcafebook.com/bomai/manual/ HTTP 200. Title is เริ่มใช้ BOM AI v2.0.2. Known VDO scope, not treated as a regression."
+  - id: J_STREET_ABSENT
+    verdict: PASS
+    evidence: "D:\\BOMAI-STREET-TEST is absent. Top of D: has only D:\\BOMAI."
+  - id: J_QCSTAR_ABSENT
+    verdict: PASS
+    evidence: "No C:\\Users\\amd\\AppData\\Local\\BOMAI-QC* directory."
+  - id: J_E_BOMAI
+    verdict: WARN
+    evidence: "E:\\BOMAI-QC still exists, 46 files, 1672 bytes, mtime 2026-11-02. E:\\BOMAI_QC_STREET_pids.json is 652 bytes."
+  - id: J_APPDATA_STUB
+    verdict: WARN
+    evidence: "Cleanup art#56703 removed AppData\\BOMAI. A state directory was recreated 2026-11-06 23:39:28 containing only install-root.txt with the text D:\\BOMAI."
+  - id: J_TEMP_RETURNED
+    verdict: WARN
+    evidence: "68 top-level bomai* entries under E:\\temp and C:\\Users\\amd\\AppData\\Local\\Temp, 8821 files, 1489724352 bytes. Includes eight bomai_chrome_* profiles from 2026-11-06 18:59."
+
+new_issues:
+  - id: N001
+    severity: HIGH
+    summary: "i9 Ollama is down, so local chat generation fails."
+    evidence: "Get-Process ollama is empty. 11434 is not listening. Gateway log pattern from art#57221 is still the current state: gateway and OWUI are up, upstream 11434 refuses. ollama.exe path in install.json is C:\\Users\\amd\\AppData\\Local\\Programs\\Ollama\\ollama.exe. expected_version in runtime.json is 0.40.13. This survey did not start it."
+    suggested_fix: "Owner starts Ollama 0.40.13 on 127.0.0.1:11434, then repeats one bomai-safe chat."
+  - id: N002
+    severity: HIGH
+    summary: "ubuntu-ai will bind Ollama to all interfaces the next time the enabled unit starts."
+    evidence: "/etc/systemd/system/ollama.service.d/override.conf sets OLLAMA_HOST=0.0.0.0:11434 and OLLAMA_MODELS=/ai/ollama/models. The unit is enabled and currently inactive. The manual pid 1933681 is still on 127.0.0.1:11434 only."
+    suggested_fix: "Before the next reboot, change that drop-in to 127.0.0.1:11434 and leave the manual process alone."
+  - id: N003
+    severity: MEDIUM
+    summary: "install.json identity fields disagree with the running folder."
+    evidence: "release=2.0.3 and status=COMPLETE, but build=b20261106042726 while rel=D:\\BOMAI\\releases\\2.0.3\\b20261106233912. updated=2026-11-06T17:24:28+07:00 and ended=2026-11-06T23:42:42. The running gateway is the rel folder. Both runtime files hash to f19c4193, so the code bytes match and the record does not."
+    suggested_fix: "On the next install write, set build to the rel leaf in the same update as release."
+  - id: N004
+    severity: MEDIUM
+    summary: "The shipped Modelfile prompt is older than the gateway prompt."
+    evidence: "Release Modelfile.bomai-safe is 700 bytes and still requires Thai for every answer, with no Han prohibition. bom_runtime.py SYSTEM_PROMPT has the v9.1 translation exception and the Han line. i9 Ollama was down, so the loaded model card was not read."
+    suggested_fix: "Ship a Modelfile that matches SYSTEM_PROMPT in the next release folder. Do not rewrite the live model tag in place."
+  - id: N005
+    severity: HIGH
+    summary: "The Mac gateway process is not the HF-1 runtime."
+    evidence: "pid 71209 runs /Users/bom/BOM-AI/package/shared/bom_runtime.py, 695 lines, sha256 f3a7aa3c…af069c, zero EgressEmitter matches, --expected-version 0.40.10, started 31 Oct. The bomai-safe tag exists and Ollama is on loopback, but those do not upgrade this gateway file."
+    suggested_fix: "Replace the Mac gateway file with the f19c4193 runtime in a new supervised start. Do not kill the current process from a survey."
+  - id: N006
+    severity: LOW
+    summary: "i9 SearXNG is still launched from the 2.0.2 tree."
+    evidence: "Listener pid 53304 is a child of python 86864, whose parent is powershell running D:\\BOMAI\\releases\\2.0.2\\b20261106042726\\start-searxng.ps1. The 2.0.3 folder has its own start-searxng.ps1. HTTP 200, so this is a split root, not an outage."
+    suggested_fix: "At the next planned restart, start SearXNG from the 2.0.3 leaf. Leave the current process running."
+  - id: N007
+    severity: LOW
+    summary: "The retired AppData BOMAI directory stub is back."
+    evidence: "art#56703 verified Test-Path false. Now C:\\Users\\amd\\AppData\\Local\\BOMAI\\state\\install-root.txt exists, 10 bytes, content D:\\BOMAI, mtime 2026-11-06 23:39:28. runtime.json is not there."
+    suggested_fix: "Confirm the 23:42 installer pass recreated it, then remove only that stub if the owner still wants AppData absent."
+
+still_open_from_round_1:
+  - "F002 harmful-word refusal is still quality-exclude only. Recorded as P2_SAFETY WARN."
+  - "F006 installer comment/mutex and F007 models.json version were deferred and not re-audited line by line."
+  - "F009 native option overlay remains."
+  - "F010 Ollama pin still differs: i9 target 0.40.13 is down, ubuntu-ai and Mac run 0.40.14."
+  - "F017 OWUI remains i9 0.12.5, ubuntu-ai 0.12.4, Mac 0.12.0, C2 0.13.0."
+  - "F037 Mac still has distinct light/pro digests from the older tags, and bomai-pro, bomai-mini, and bomai-gemma3 still share 5bd9e2dc6f01."
+  - "F040 litellm prod v1.106.5 and staging v1.106.4."
+  - "D:\\BOMAI root still inherits Authenticated Users modify. The runtime.json file ACL is tight."
+  - "Manual title remains v2.0.2 by the VDO handoff."
+  - "Cert expires 2027-01-01 UTC. 56 days remain."
+
+comparison_with_round_1:
+  improved:
+    - "Running i9 gateway is HF-1 sha f19c4193, 2584 lines, with EgressEmitter and the Unicode 18 Han table. Round 1 running file was sha 054ed6b1 with 19 write sites."
+    - "GitHub runtime, README v2.0.3, and Latest flag match the ship."
+    - "Hugging Face README is HTTP 200 and the three installer hashes match bomai.app and GitHub."
+    - "CSP unsafe-eval is on the public vhost."
+    - "Italian page files are gone and /it/download is now 404."
+    - "Mac Ollama is loopback-only and bomai-safe exists."
+    - "ubuntu-ai crash loop is gone: NRestarts=0 and the manual serve is alive."
+    - "AppData runtime.json with the sandbox ACE is gone."
+    - "D:\\BOMAI-STREET-TEST and BOMAI-QC* are gone."
+  regressed:
+    - "i9 Ollama was up at 0.40.13 in art#56602 and is down now."
+    - "Mac gateway file was already old in spirit; it was not replaced when bomai-safe was created, so the desktop Mac path still has no egress emitter."
+    - "Enabling ollama.service armed an older 0.0.0.0 drop-in."
+    - "install.json build was aligned on 6 Nov 17:24 and drifted again at 23:42."
+    - "AppData\\BOMAI stub reappeared after the cleanup that had removed the tree."
+
+distribution:
+  bat_sha256: "88428a59580e02ef0ee3d6f10db2253faadef877b2864cb2e18a0fcdd84f8faa"
+  bat_bytes: 406263
+  sh_sha256: "d27178cef858a4600af7697670620b859e8792339f8ae465412bdc99b8aefd42"
+  sh_bytes: 87090
+  zip_sha256: "70ff5dfa80bd7722eafbef41946089caf749bb0c698f8c876e3075b93a058e07"
+  zip_bytes: 87242
+  release_json_sha256: "0a9cd85b6c3af9a21d77f319fb0ae1a199c4e286d75ffca6711fbe55401d250a"
+  channels_match: true
+  github_release_json_name: release_203_ready.json
+
+services:
+  i9:
+    ollama: DOWN
+    gateway: "pid 24384 127.0.0.1:11435 auth 401"
+    owui: "pid 8304 127.0.0.1:8080 version 0.12.5"
+    searxng: "pid 53304 127.0.0.1:8888 HTTP 200 from 2.0.2 launcher"
+    disk_free_bytes: {C: 390823055360, D: 3712786210816, E: 1220684939264}
+  ubuntu_ai:
+    ollama: "pid 1933681 127.0.0.1:11434 version 0.40.14"
+    unit: "enabled inactive NRestarts=0"
+    owui: "pid 2689 127.0.0.1:3000 version 0.12.4"
+    searxng: "127.0.0.1:8888 HTTP 200"
+    litellm: "v1.106.5 on 0.0.0.0:4000; staging v1.106.4 on tailscale"
+    disk: "528G avail, 40 percent used"
+  mac:
+    ollama: "pid 63159 127.0.0.1:11434 version 0.40.14"
+    bomai_safe: present
+    gateway: "pid 71209 127.0.0.1:11435 old runtime"
+    owui: "pid 755 127.0.0.1:3000"
+    disk: "654Gi avail, 2 percent used"
+  cat:
+    nginx: "master 4806, version 1.29.4"
+    http: "bomai.app 302 /th, download 200"
+    cert_days: 56
+    disk: "371G avail, 11 percent used"
+    grav_cache: 24M
+  c2:
+    owui: "v0.13.0 healthy, loopback 3000"
+    litellm: "1.106.5-pil2"
+    searxng: "alias searxng, up"
+    disk: "277G avail, 27 percent used"
+  nas:
+    backup: intact
+    backup_runtime_sha256: "f19c4193ec2f0a54bd8cecd75b711973a3322dee17e5a1ebad36117854f299b7"
+    disk: "3.7T avail, 30 percent used"
+
+code_scan:
+  file: "D:\\BOMAI\\releases\\2.0.3\\b20261106233912\\bom_runtime.py"
+  lines: 2584
+  bytes: 133774
+  sha256: "f19c4193ec2f0a54bd8cecd75b711973a3322dee17e5a1ebad36117854f299b7"
+  classes: 10
+  functions: 56
+  wfile_write: 3
+  round1_wfile_write: 19
+  allow_han: 0
+  config_g: "temperature=0.6 top_p=0.95 top_k=20 repeat_penalty=1.0 presence_penalty=0.0 num_ctx=8192 num_predict=4096"
+  han_policy_sha256: "0974788df77639bc1500e2fa66bbcc23a5d1f4fb737e603ab0ef8e7e4552809b"
+  native_strips_extra_options: false
+  openai_strips_extra_options: true
+  logs_over_100mb: 0
+  core_dumps: 0
+
+junk:
+  count_rule: "Top-level temp entries, QC directories, backup files, nginx bak files, NAS orphans, and Git refs. Files inside a QC directory are not counted again."
+  byte_rule: "Exact byte sums from file lengths, du -sb, and du -sk*1024. Git refs add 0. Two CAT quarantine copies were not sized and are excluded from junk_total_bytes."
+  total_bytes: 70566164070
+  items:
+    - path: "E:\\temp and C:\\Users\\amd\\AppData\\Local\\Temp bomai* hf_readme* mac_modelfile*"
+      count: 68
+      bytes: 1489724352
+      files_inside: 8821
+      recommendation: DELETE
+      note: "Includes eight bomai_chrome_* browser profiles from 2026-11-06 18:59 and C:\\Users\\amd\\AppData\\Local\\Temp\\bomai_p1_src."
+    - path: "C:\\Users\\amd\\AppData\\Local\\BOMAI"
+      bytes: 10
+      mtime: "2026-11-06T23:39:28+07:00"
+      recommendation: DELETE
+    - path: "C:\\Users\\amd\\AppData\\Local\\BOMAI.bak_20261010_142917"
+      bytes: 6364406
+      files: 110
+      recommendation: OWNER_DECISION
+    - path: "C:\\Users\\amd\\AppData\\Local\\BOMAI.bak_qa2_20261001_103453"
+      bytes: 151964
+      recommendation: OWNER_DECISION
+    - path: "C:\\Users\\amd\\AppData\\Local\\BOMAI.bak_qa_20261001_103453"
+      bytes: 158280
+      recommendation: OWNER_DECISION
+    - path: "C:\\Users\\amd\\AppData\\Local\\BOMAI_Installer"
+      bytes: 2365931184
+      files: 79180
+      recommendation: OWNER_DECISION
+    - path: "E:\\BOMAI-QC"
+      bytes: 1672
+      mtime: "2026-11-02T18:51:28+07:00"
+      recommendation: DELETE
+    - path: "E:\\BOMAI_QC_STREET_pids.json"
+      bytes: 652
+      mtime: "2026-10-13T08:41:27+07:00"
+      recommendation: DELETE
+    - path: "D:\\BOMAI\\state\\install.json.bak_20261106T1719Z"
+      bytes: 1174
+      recommendation: KEEP
+    - path: "D:\\BOMAI\\state\\appdata_webui_backup.db"
+      bytes: 770048
+      recommendation: KEEP
+      note: "Created by art#56703 as the preserved AppData webui database."
+    - path: "D:\\BOMAI\\releases\\2.0.0"
+      bytes: 0
+      recommendation: DELETE
+    - path: "D:\\BOMAI\\releases\\2.0.1"
+      bytes: 0
+      recommendation: DELETE
+    - path: "ubuntu-ai /home/bom QC and bomai_* trees except live /home/bom/BOM-AI"
+      count: 15
+      bytes: 40649963947
+      recommendation: OWNER_DECISION
+      note: "Largest are BOM-AI-ZCODE-QC-20261031T192307Z 8688712524, BOM-AI-ZCODE-QC-20261103T190242Z 8557959343, BOM-AI-Codex-QC-55045-01a19321 7945248872, bomai_streettest 7773284638, bomai_backups 7558182253."
+    - path: "ubuntu-ai /tmp Modelfile.* and /tmp/bomai*"
+      count: 17
+      bytes: 63595538
+      recommendation: DELETE
+      note: "Largest single file is /tmp/bomai_v3.log. Live /home/bom/BOM-AI is 32G and is not in this junk total."
+    - path: "Mac /Users/bom QC directories except live /Users/bom/BOM-AI"
+      count: 11
+      bytes: 12297515008
+      recommendation: OWNER_DECISION
+      note: "du -sk converted by 1024. Largest is BOM-AI-ZCODE-QC-20261031T192307Z. /tmp has no bomai or Modelfile entry. Loose sibling scripts were not sized."
+    - path: "CAT /tmp/bomai*"
+      count: 15
+      bytes: 30029293
+      recommendation: DELETE
+      note: "Includes /tmp/bomai-full-backup-20261031_051159.tar.gz and /tmp/bomai_italian_backup. The Italian page copy also exists under /home/_ops_backups/bomai."
+    - path: "CAT /etc/nginx/conf.d/bomai-app.conf.bak* and floodbak"
+      count: 16
+      bytes: 84423
+      recommendation: OWNER_DECISION
+      note: "Live conf is 7741 bytes and is not included. Other vhosts' bak files in conf.d were seen and left out of this BOMAI count."
+    - path: "CAT /home/_ops_backups/bomai"
+      bytes_note: "du -sh 1.4M, not added to junk_total_bytes"
+      recommendation: KEEP
+    - path: "NAS /volume1/homes/siamcafe/backups/bomai_run3_20261003_032048"
+      bytes: 13653797656
+      recommendation: OWNER_DECISION
+    - path: "NAS /volume1/homes/siamcafe/backups/bomai"
+      bytes: 4679474
+      recommendation: OWNER_DECISION
+    - path: "NAS /volume1/homes/siamcafe/git/bomai-backup.git"
+      bytes: 149180
+      recommendation: KEEP
+    - path: "NAS /volume1/docker/ai/bomai-check.sh"
+      bytes: 15264
+      recommendation: OWNER_DECISION
+    - path: "NAS /volume1/homes/siamcafe/_ops/reports/bomai-product"
+      bytes: 1615011
+      recommendation: KEEP
+    - path: "NAS /volume1/homes/siamcafe/_ops/tmp_claude/bomai-banner"
+      bytes: 1614653
+      recommendation: OWNER_DECISION
+    - path: "NAS /volume1/homes/siamcafe/XM Global MT5/BOMAI_COMPLETE_SETUP.sh"
+      bytes: 881
+      recommendation: OWNER_DECISION
+    - path: "NAS quarantine bomai-app.conf.bak copies"
+      count: 2
+      bytes_note: "not measured, excluded from total"
+      recommendation: OWNER_DECISION
+    - path: "GitHub release v0.3.1"
+      bytes: 0
+      recommendation: OWNER_DECISION
+    - path: "GitHub release v0.3.2"
+      bytes: 0
+      recommendation: OWNER_DECISION
+    - path: "GitHub tag v3.0.0"
+      bytes: 0
+      recommendation: OWNER_DECISION
+    - path: "GitHub tag backup/preship-v2.0.0-20261103"
+      bytes: 0
+      recommendation: OWNER_DECISION
+    - path: "GitHub tag v2.0.3-backup"
+      bytes: 0
+      recommendation: KEEP
+    - path: "GitHub branch backup/preship-v2.0.0-20261103"
+      bytes: 0
+      recommendation: OWNER_DECISION
+    - path: "GitHub branch release/v2.0.0-final-close-20261103T190242Z"
+      bytes: 0
+      recommendation: OWNER_DECISION
+  absent:
+    - "D:\\BOMAI-STREET-TEST"
+    - "C:\\Users\\amd\\AppData\\Local\\BOMAI-QC*"
+    - "Mac /tmp/bomai* and /tmp/Modelfile*"
+    - "Hugging Face stale installer names"
+
+github:
+  latest: v2.0.3
+  releases: [v2.0.3, v0.3.2, v0.3.1]
+  tags: [v3.0.0, v2.0.3, v2.0.3-backup, v0.3.2, v0.3.1, backup/preship-v2.0.0-20261103]
+  branches: [main, backup/preship-v2.0.0-20261103, release/v2.0.0-final-close-20261103T190242Z]
+
+not_junk:
+  - "D:\\BOMAI live root, including releases\\2.0.2 because SearXNG is still launched from it, and releases\\2.0.3 because gateway and OWUI run from it"
+  - "ubuntu-ai /home/bom/BOM-AI"
+  - "Mac /Users/bom/BOM-AI"
+  - "NAS /volume1/docker/backups/bomai official backup"
+  - "CAT Grav cache 24M"
+
+residual_risk:
+  - "i9 chat cannot generate until Ollama is started."
+  - "Mac chat through pid 71209 does not have the HF-1 egress emitter."
+  - "A ubuntu-ai reboot changes Ollama from loopback to 0.0.0.0 unless override.conf is edited first."
+  - "No product file was modified, no service was restarted, and no process was killed."
+recommendation: inspect

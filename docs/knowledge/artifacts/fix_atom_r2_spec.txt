@@ -1,0 +1,225 @@
+[OPS]: Fix_AtomR2_N002_N003_N004_N005_N007_Cleanup_Junk [bomai]
+
+TOOL: zcode
+MODE: /goal
+MODEL: GLM-5.3 THOUGHT Max
+PROJECT: bomai
+TAB TITLE: [OPS]: Fix_AtomR2_N002_N003_N004_N005_N007_Cleanup_Junk [bomai]
+禁止重命名标签页。 Do NOT rename the tab. Tab title = exactly as pasted.
+
+OBJECTIVE
+Fix 5 issues + cleanup junk from atom survey round 2 art#57246 on [bomai].
+N002: ubuntu-ai override.conf bind 0.0.0.0 → 127.0.0.1
+N003: i9 install.json build field mismatch
+N004: i9 Modelfile prompt older than gateway prompt
+N005: Mac gateway replace with HF-1 runtime (sha f19c4193)
+N007: i9 AppData stub remove
++ DELETE-safe junk across i9/ubuntu-ai/Mac/CAT (owner-approved)
+Acceptance: all 5 fixed + junk removed + verify zero service impact.
+
+最终回答 must be a single fenced YAML code block:
+project: bomai
+n002_ubuntu_bind: (FIXED/FAIL)
+n003_install_json: (FIXED/FAIL)
+n004_modelfile: (FIXED/FAIL)
+n005_mac_gateway: (FIXED/FAIL)
+n007_appdata_stub: (FIXED/FAIL)
+junk_removed_bytes: (bytes)
+junk_removed_count: (count)
+production_impact: none
+
+PHASE 0 — CONTEXT + PREFLIGHT
+0.1  $headers = @{ "Authorization" = "Bearer [REDACTED]"; "User-Agent" = "Mozilla/5.0" }
+     Invoke-WebRequest -Uri "https://hub.siam2r.com/v1/artifacts/57246/raw" -Headers $headers -UseBasicParsing | Select-Object -ExpandProperty Content
+
+0.2  SSH probe:
+     ssh -o ConnectTimeout=10 -p 22 bom@192.168.1.20 "echo OK-i9"
+     ssh -o ConnectTimeout=10 -p 99 bom@192.168.1.248 "echo OK-ubuntu"
+     ssh -o ConnectTimeout=10 -p 22 bom@192.168.1.254 "echo OK-mac"
+     ssh -o ConnectTimeout=10 -p 99 siamcar@122.155.168.7 "echo OK-cat"
+
+0.3  Joblog RUNNING:
+     $body = @{ status = "RUNNING"; note = "P0 preflight fix r2 all"; project = "bomai"; step = "fix_atom_r2_n002_n005_cleanup" } | ConvertTo-Json
+     Invoke-WebRequest -Uri "https://hub.siam2r.com/v1/jobs/zcode/report" -Method POST -Headers $headers -ContentType "application/json" -Body $body -UseBasicParsing
+
+PHASE 1 — N002: ubuntu-ai override.conf bind fix
+1.1  Survey:
+     ssh -p 99 bom@192.168.1.248 "cat /etc/systemd/system/ollama.service.d/override.conf"
+     Expected: OLLAMA_HOST=0.0.0.0:11434
+
+1.2  Backup + fix:
+     ssh -p 99 bom@192.168.1.248 "sudo cp /etc/systemd/system/ollama.service.d/override.conf /etc/systemd/system/ollama.service.d/override.conf.bak_$(date +%Y%m%d%H%M%S)"
+     ssh -p 99 bom@192.168.1.248 "sudo sed -i 's/OLLAMA_HOST=0.0.0.0:11434/OLLAMA_HOST=127.0.0.1:11434/' /etc/systemd/system/ollama.service.d/override.conf"
+     ssh -p 99 bom@192.168.1.248 "sudo systemctl daemon-reload"
+
+1.3  Verify:
+     ssh -p 99 bom@192.168.1.248 "cat /etc/systemd/system/ollama.service.d/override.conf | grep OLLAMA_HOST"
+     Expected: 127.0.0.1:11434
+
+1.4  Verify manual serve untouched:
+     ssh -p 99 bom@192.168.1.248 "ps aux | grep 'ollama serve' | grep -v grep; curl -s http://127.0.0.1:11434/api/version"
+     Expected: pid 1933681 still alive, version 0.40.14
+
+PHASE 2 — N003: i9 install.json build field
+2.1  Survey current:
+     Get-Content "D:\BOMAI\state\install.json" | ConvertFrom-Json | Select-Object release,build,updated
+
+2.2  Get actual running release folder:
+     $rel = Get-ChildItem "D:\BOMAI\releases\2.0.3" -Directory | Sort-Object Name -Descending | Select-Object -First 1
+     $rel.Name
+
+2.3  Fix:
+     $ij = Get-Content "D:\BOMAI\state\install.json" | ConvertFrom-Json
+     $ij.build = $rel.Name
+     $ij.updated = (Get-Date -Format "yyyy-MM-ddTHH:mm:sszzz")
+     $ij | ConvertTo-Json -Depth 10 | Out-File "D:\BOMAI\state\install.json" -Encoding utf8NoBOM
+
+2.4  Verify:
+     Get-Content "D:\BOMAI\state\install.json" | ConvertFrom-Json | Select-Object release,build
+
+PHASE 3 — N004: Modelfile prompt update to v9.1
+3.1  Survey current Modelfile:
+     Get-Content "D:\BOMAI\releases\2.0.3\b20261106233912\Modelfile.bomai-safe"
+
+3.2  Read SYSTEM_PROMPT from shipping bom_runtime.py:
+     Select-String -Path "D:\BOMAI\releases\2.0.3\b20261106233912\bom_runtime.py" -Pattern "SYSTEM_PROMPT" -Context 0,10
+
+3.3  Update Modelfile SYSTEM line to match gateway v9.1:
+     DECISION TABLE:
+       Read bom_runtime.py SYSTEM_PROMPT text (the v9.1 candidate with Han line + translation exception)
+       Replace the SYSTEM line in Modelfile.bomai-safe with that text
+       Keep all PARAMETER lines unchanged (sampling lock)
+
+     Backup first:
+     Copy-Item "D:\BOMAI\releases\2.0.3\b20261106233912\Modelfile.bomai-safe" "D:\BOMAI\releases\2.0.3\b20261106233912\Modelfile.bomai-safe.bak_$(Get-Date -Format 'yyyyMMddHHmmss')"
+
+     Write updated Modelfile (keep FROM + PARAMETER, replace SYSTEM)
+
+3.4  Verify:
+     Get-Content "D:\BOMAI\releases\2.0.3\b20261106233912\Modelfile.bomai-safe"
+     Expected: SYSTEM line contains Han prohibition + translation exception
+
+     NOTE: Do NOT run ollama create — i9 Ollama is DOWN (N001). Owner starts Ollama then creates model.
+
+PHASE 4 — N005: Mac gateway replace with HF-1 runtime
+4.1  Survey current Mac gateway:
+     ssh -p 22 bom@192.168.1.254 "wc -l /Users/bom/BOM-AI/package/shared/bom_runtime.py; shasum -a 256 /Users/bom/BOM-AI/package/shared/bom_runtime.py"
+     Expected: 695 lines, sha f3a7aa3c (old)
+
+4.2  Copy shipping HF-1 runtime from i9 to Mac:
+     scp -P 22 "D:\BOMAI\releases\2.0.3\b20261106233912\bom_runtime.py" bom@192.168.1.254:/tmp/bom_runtime_hf1.py
+     ssh -p 22 bom@192.168.1.254 "shasum -a 256 /tmp/bom_runtime_hf1.py"
+     Expected: sha f19c4193
+
+4.3  Backup old + replace:
+     ssh -p 22 bom@192.168.1.254 "cp /Users/bom/BOM-AI/package/shared/bom_runtime.py /Users/bom/BOM-AI/package/shared/bom_runtime.py.bak_$(date +%Y%m%d%H%M%S)"
+     ssh -p 22 bom@192.168.1.254 "cp /tmp/bom_runtime_hf1.py /Users/bom/BOM-AI/package/shared/bom_runtime.py"
+
+4.4  Verify file in place:
+     ssh -p 22 bom@192.168.1.254 "wc -l /Users/bom/BOM-AI/package/shared/bom_runtime.py; shasum -a 256 /Users/bom/BOM-AI/package/shared/bom_runtime.py"
+     Expected: 2584 lines, sha f19c4193
+
+     NOTE: The running gateway (pid 71209) still uses the OLD file in memory.
+     Do NOT kill pid 71209 — Mac = READ-ONLY PROD.
+     The new file takes effect on next gateway restart (owner decision).
+     Record: "file replaced, process restart needed for activation, not done by this spec"
+
+PHASE 5 — N007: AppData stub remove
+5.1  Survey:
+     Test-Path "C:\Users\amd\AppData\Local\BOMAI"
+     if (Test-Path "C:\Users\amd\AppData\Local\BOMAI") { Get-ChildItem "C:\Users\amd\AppData\Local\BOMAI" -Recurse }
+
+5.2  Remove:
+     DECISION TABLE:
+       if only install-root.txt (10 bytes) → Remove-Item "C:\Users\amd\AppData\Local\BOMAI" -Recurse -Force
+       if contains more than just install-root.txt → list contents, STOP, record OWNER_DECISION
+       if does not exist → record ALREADY_GONE
+
+5.3  Verify:
+     Test-Path "C:\Users\amd\AppData\Local\BOMAI"
+     Expected: False
+
+PHASE 6 — JUNK CLEANUP (DELETE-safe items only)
+6.1  i9 temp files:
+     Remove-Item "$env:TEMP\bomai*" -Recurse -Force -ErrorAction SilentlyContinue
+     Remove-Item "$env:TEMP\hf_readme*" -Force -ErrorAction SilentlyContinue
+     Remove-Item "$env:TEMP\mac_modelfile*" -Force -ErrorAction SilentlyContinue
+     # E:\temp bomai files
+     Remove-Item "E:\temp\bomai*" -Recurse -Force -ErrorAction SilentlyContinue
+
+6.2  i9 E:\ remnants:
+     Remove-Item "E:\BOMAI-QC" -Recurse -Force -ErrorAction SilentlyContinue
+     Remove-Item "E:\BOMAI_QC_STREET_pids.json" -Force -ErrorAction SilentlyContinue
+
+6.3  i9 empty old release folders:
+     DECISION TABLE:
+       if D:\BOMAI\releases\2.0.0 is empty → Remove-Item
+       if D:\BOMAI\releases\2.0.1 is empty → Remove-Item
+       if either has files → KEEP (might be referenced)
+     Do NOT touch D:\BOMAI\releases\2.0.2 (SearXNG runs from it per N006)
+     Do NOT touch D:\BOMAI\releases\2.0.3 (LIVE)
+
+6.4  ubuntu-ai /tmp:
+     ssh -p 99 bom@192.168.1.248 "rm -f /tmp/Modelfile.* /tmp/bomai* 2>/dev/null; echo DONE"
+
+6.5  CAT /tmp:
+     ssh -p 99 siamcar@122.155.168.7 "rm -rf /tmp/bomai* 2>/dev/null; echo DONE"
+
+6.6  i9 AppData old backups (OWNER_DECISION items → DELETE per owner GO):
+     Remove-Item "C:\Users\amd\AppData\Local\BOMAI.bak_20261010_142917" -Recurse -Force -ErrorAction SilentlyContinue
+     Remove-Item "C:\Users\amd\AppData\Local\BOMAI.bak_qa2_20261001_103453" -Recurse -Force -ErrorAction SilentlyContinue
+     Remove-Item "C:\Users\amd\AppData\Local\BOMAI.bak_qa_20261001_103453" -Recurse -Force -ErrorAction SilentlyContinue
+     Remove-Item "C:\Users\amd\AppData\Local\BOMAI_Installer" -Recurse -Force -ErrorAction SilentlyContinue
+
+6.7  Verify cleanup:
+     Test-Path "E:\BOMAI-QC"
+     Test-Path "C:\Users\amd\AppData\Local\BOMAI"
+     Get-ChildItem "$env:TEMP\bomai*" -ErrorAction SilentlyContinue
+     Expected: all False/empty
+
+PHASE 7 — VERIFY PRODUCTION + REPORT
+7.1  Production untouched:
+     # i9 (Ollama is DOWN — known N001, do not start)
+     curl.exe -s http://127.0.0.1:11435/api/version
+     curl.exe -s http://127.0.0.1:8080/api/version
+     # ubuntu-ai
+     ssh -p 99 bom@192.168.1.248 "curl -s http://127.0.0.1:11434/api/version; ps aux | grep 'ollama serve' | grep -v grep | awk '{print \$2}'"
+     # Mac
+     ssh -p 22 bom@192.168.1.254 "curl -s http://127.0.0.1:11434/api/version; lsof -nP -iTCP:11435 | head -3"
+     Expected: all services same PIDs as before
+
+7.2  Upload report:
+     Save as $env:TEMP\bomai_fix_r2_all_report.yaml
+     curl.exe -X POST -A "Mozilla/5.0" -H "Authorization: Bearer [REDACTED]" -F "file=@$env:TEMP\bomai_fix_r2_all_report.yaml" -F "project=bomai" "https://hub.siam2r.com/v1/artifacts"
+
+7.3  Joblog DONE:
+     $body = @{ status = "DONE"; note = "N002-N007 fixed + junk cleanup done"; project = "bomai"; step = "fix_atom_r2_n002_n005_cleanup" } | ConvertTo-Json
+     Invoke-WebRequest -Uri "https://hub.siam2r.com/v1/jobs/zcode/report" -Method POST -Headers $headers -ContentType "application/json" -Body $body -UseBasicParsing
+
+SCOPE LOCK
+IN: N002 ubuntu-ai, N003+N004+N007 i9, N005 Mac gateway file, junk cleanup i9+ubuntu+CAT.
+OUT: N001 (owner starts Ollama), N006 (next restart), ubuntu-ai QC dirs 40GB + Mac QC dirs 12GB + NAS old backups 13GB (OWNER_DECISION separate spec if approved).
+
+SSH LOCK
+NEVER modify sshd/PasswordAuthentication/authorized_keys.
+
+TAB LOCK
+禁止重命名标签页。
+
+NEVER ASK
+All branches have actions.
+
+FORBIDDEN
+- Start Ollama on i9 (owner decision N001)
+- Kill Mac gateway pid 71209 (file replaced, restart = owner)
+- Touch D:\BOMAI\releases\2.0.2 (SearXNG runs from it)
+- Touch D:\BOMAI\releases\2.0.3 live processes
+- Touch Mac port 11435/3000 processes
+- Run ollama create on i9 (Ollama DOWN)
+- sshd/DNS/resolv.conf
+- da build rewrite_confs
+- nginx restart
+- Paid API / docker compose
+- Delete ubuntu-ai QC dirs (40GB — OWNER_DECISION, not in this spec)
+- Delete Mac QC dirs (12GB — OWNER_DECISION)
+- Delete NAS old backups (13GB — OWNER_DECISION)

@@ -1,0 +1,290 @@
+[BOMAI] zcode /goal — Ship v2.0.4 (GitHub + bomai.app + Post-Ship Verify)
+
+TOOL: zcode
+MODE: /goal
+MODEL: GLM-5.3 THOUGHT Max
+PROJECT: bomai
+TAB TITLE: [OPS]: Ship_v204_GitHub_Web [bomai]
+禁止重命名标签页。Do NOT rename the tab.
+
+────────────────────────────────────────
+OBJECTIVE
+────────────────────────────────────────
+[bomai] Ship BOM AI v2.0.4 to GitHub release + update bomai.app download page. Then verify the published files work.
+Full authority — autonomous — no owner approval needed. BLOCKED items = log and continue.
+
+Read K3 GOD BLUEPRINT Section 8 (ship checklist):
+```powershell
+$bp = Invoke-WebRequest -Uri "https://hub.siam2r.com/v1/artifacts/57376/raw" -Headers @{"Authorization"="Bearer [REDACTED]";"User-Agent"="Mozilla/5.0"} -UseBasicParsing
+$bp.Content | Out-File -Encoding utf8 D:\specs\god_blueprint_v204.yaml
+```
+
+Read the QC-verified installer files from hub:
+```powershell
+$bat = Invoke-WebRequest -Uri "https://hub.siam2r.com/v1/artifacts/57411/raw" -Headers @{"Authorization"="Bearer [REDACTED]";"User-Agent"="Mozilla/5.0"} -UseBasicParsing -OutFile "Install-BOM-AI-Online.bat"
+$sh = Invoke-WebRequest -Uri "https://hub.siam2r.com/v1/artifacts/57412/raw" -Headers @{"Authorization"="Bearer [REDACTED]";"User-Agent"="Mozilla/5.0"} -UseBasicParsing -OutFile "install-bom-ai-linux.sh"
+$mac = Invoke-WebRequest -Uri "https://hub.siam2r.com/v1/artifacts/57413/raw" -Headers @{"Authorization"="Bearer [REDACTED]";"User-Agent"="Mozilla/5.0"} -UseBasicParsing -OutFile "install-bom-ai-mac.zip"
+```
+
+Acceptance:
+1. GitHub release v2.0.4 exists with tag, 3 assets, marked Latest
+2. bomai.app release.json (all 3 copies) shows 2.0.4 with correct SHAs
+3. bomai.app homepage shows 2.0.4
+4. Download links return HTTP 200 + correct file sizes
+5. Post-ship: fresh download from published URL → SHA matches hub artifacts
+
+最终回答: one fenced yaml block with all evidence.
+
+────────────────────────────────────────
+PHASE 0: VERIFY FILES + COMPUTE SHAs
+────────────────────────────────────────
+0.1 Verify downloaded files match QC-tested SHAs:
+    certutil -hashfile Install-BOM-AI-Online.bat SHA256
+    Expected: 58b21b88aec9c019be6fb0d92cf39e80da9baaf0be0c1de1d542d995ecb4155a
+
+    certutil -hashfile install-bom-ai-linux.sh SHA256
+    Expected: a55f3a20d203a4e4bb6c7461e2aaa4f1052c27972c55ce4605e7a16dc32f9ff4
+
+    certutil -hashfile install-bom-ai-mac.zip SHA256
+    Expected: 6daa6b508cdf936b0b4cae3d6a1d2307c1ef17149d24efabd8052fa9b7f418ba
+
+    If ANY SHA mismatch → DEAD. Do not ship.
+
+0.2 Get file sizes for release.json update.
+
+0.3 Joblog RUNNING:
+    Invoke-WebRequest -Uri "https://hub.siam2r.com/v1/jobs/zcode/report" -Method POST -Headers @{"Authorization"="Bearer [REDACTED]";"User-Agent"="Mozilla/5.0";"Content-Type"="application/json"} -Body '{"status":"RUNNING","note":"Shipping v2.0.4 to GitHub + bomai.app","project":"bomai","step":"deploy_ship_v204"}' -UseBasicParsing
+
+────────────────────────────────────────
+PHASE 1: GITHUB RELEASE
+────────────────────────────────────────
+1.1 Clone or update repo:
+    SSH i9 (bomi9@192.168.1.20:22 pass [REDACTED]):
+    git clone https://github.com/siamcafe/bomai.git bomai-repo 2>$null
+    cd bomai-repo; git pull
+
+    DECISION TABLE:
+    - If git clone fails (auth) → try: git clone https://<token>@github.com/siamcafe/bomai.git
+    - If no token available → check if gh CLI is installed: gh auth status
+    - If gh CLI available → use gh release create
+    - If no gh CLI → install: winget install GitHub.cli 2>$null; or download from github.com/cli/cli/releases
+    - If ALL auth methods fail → BLOCKED, push files to hub, report, continue to Phase 2
+
+1.2 Copy v2.0.4 files into repo (if needed for commit):
+    Copy-Item ..\Install-BOM-AI-Online.bat .
+    Copy-Item ..\install-bom-ai-linux.sh .
+    Copy-Item ..\install-bom-ai-mac.zip .
+
+1.3 Create release:
+    $releaseNotes = @'
+## BOM AI v2.0.4 — Reinstall & Uninstall Fix
+
+### What's New
+- **Proper uninstall**: stops all BOM AI processes by port detection, removes files cleanly
+- **Safe reinstall**: preserves chat history, user settings, and extra models
+- **Process management**: detects stuck processes, warns user, auto-kills with confirmation
+- **Ollama version flexibility**: accepts 0.40.x series (not just exact 0.40.13)
+- **Pro tier preserved**: Update/Repair no longer resets tier to Light
+- **User config preserved**: reinstall keeps your changed settings (locale, search, models)
+- **Console mode**: honors existing install path, no accidental second copy
+- **Mutex protection**: install and uninstall cannot race
+- **Unix uninstall**: macOS and Linux now have --uninstall with full cleanup
+- **9 additional bugs fixed** during QC street testing
+
+### Compatibility
+- Windows 10/11 x64
+- macOS 13+ (Apple Silicon + Intel)
+- Ubuntu 22.04+ / Debian 12+
+
+### Install
+Download and run the installer for your OS. If upgrading from v2.0.3, your chats and settings are preserved.
+
+### Uninstall
+- Windows: Run the installer again → Uninstall
+- macOS: `~/BOM-AI/install-bom-ai-mac.command --uninstall`
+- Linux: `~/BOM-AI/install-bom-ai-linux.sh --uninstall`
+
+### SHA-256
+- Install-BOM-AI-Online.bat: `58b21b88aec9c019be6fb0d92cf39e80da9baaf0be0c1de1d542d995ecb4155a`
+- install-bom-ai-linux.sh: `a55f3a20d203a4e4bb6c7461e2aaa4f1052c27972c55ce4605e7a16dc32f9ff4`
+- install-bom-ai-mac.zip: `6daa6b508cdf936b0b4cae3d6a1d2307c1ef17149d24efabd8052fa9b7f418ba`
+'@
+    $releaseNotes | Out-File -Encoding utf8 release_notes.md
+
+    gh release create v2.0.4 Install-BOM-AI-Online.bat install-bom-ai-linux.sh install-bom-ai-mac.zip --title "BOM AI v2.0.4 (Reinstall & Uninstall Fix)" --notes-file release_notes.md --latest
+
+    DECISION TABLE:
+    - If gh release create fails auth → try: gh auth login --with-token
+    - If token not available → BLOCKED, log, continue Phase 2
+    - If release already exists → gh release upload v2.0.4 <files> --clobber
+
+1.4 Verify release:
+    gh release view v2.0.4 --json tagName,assets
+    curl.exe -sI "https://github.com/siamcafe/bomai/releases/download/v2.0.4/Install-BOM-AI-Online.bat" | Select-String "HTTP|Content-Length"
+
+────────────────────────────────────────
+PHASE 2: UPDATE BOMAI.APP
+────────────────────────────────────────
+SSH bom@122.155.168.7:99
+
+2.1 Backup current release.json:
+    cp /home/siamcar/domains/bomai.app/dl/release.json /home/siamcar/domains/bomai.app/dl/release.json.bak-v203
+
+2.2 Upload new installer files to dl/:
+    DECISION TABLE:
+    - If files can be SCP'd from i9 → scp from i9 to CAT
+    - If not → curl download from GitHub release URL
+    - If GitHub release not yet published → curl download from hub artifacts
+
+    Upload BAT:
+    curl -sL "https://github.com/siamcafe/bomai/releases/download/v2.0.4/Install-BOM-AI-Online.bat" -o /home/siamcar/domains/bomai.app/dl/Install-BOM-AI-Online.bat
+    OR from hub: curl -s -A "Mozilla/5.0" -H "Authorization: Bearer [REDACTED]" "https://hub.siam2r.com/v1/artifacts/57411/raw" -o /home/siamcar/domains/bomai.app/dl/Install-BOM-AI-Online.bat
+
+    Same for .sh and .zip.
+
+2.3 Verify SHAs on CAT:
+    sha256sum /home/siamcar/domains/bomai.app/dl/Install-BOM-AI-Online.bat
+    sha256sum /home/siamcar/domains/bomai.app/dl/install-bom-ai-linux.sh
+    sha256sum /home/siamcar/domains/bomai.app/dl/install-bom-ai-mac.zip
+    ALL must match Phase 0 expected SHAs.
+
+2.4 Update release.json — generate new version with v2.0.4 data:
+    python3 -c "
+import json, hashlib, os, datetime
+files = {
+    'windows': {'name': 'Install-BOM-AI-Online.bat', 'sha256': '58b21b88aec9c019be6fb0d92cf39e80da9baaf0be0c1de1d542d995ecb4155a'},
+    'linux': {'name': 'install-bom-ai-linux.sh', 'sha256': 'a55f3a20d203a4e4bb6c7461e2aaa4f1052c27972c55ce4605e7a16dc32f9ff4'},
+    'macos': {'name': 'install-bom-ai-mac.zip', 'sha256': '6daa6b508cdf936b0b4cae3d6a1d2307c1ef17149d24efabd8052fa9b7f418ba'}
+}
+dl = '/home/siamcar/domains/bomai.app/dl'
+for k,v in files.items():
+    path = os.path.join(dl, v['name'])
+    v['size'] = os.path.getsize(path)
+release = {
+    'version': '2.0.4',
+    'release_date': datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+    'files': files,
+    'production': {'enabled': False, 'reason': 'Deferred: no production model or route shipped'}
+}
+with open(os.path.join(dl, 'release.json'), 'w') as f:
+    json.dump(release, f, indent=2, ensure_ascii=False)
+print('release.json written')
+"
+
+2.5 Copy release.json to all 3 locations:
+    cp /home/siamcar/domains/bomai.app/dl/release.json /home/siamcar/domains/bomai.app/public_html/dl/release.json
+    cp /home/siamcar/domains/bomai.app/dl/release.json /home/siamcar/domains/bomai.app/public_html/release.json
+
+2.6 Verify all 3 match:
+    sha256sum /home/siamcar/domains/bomai.app/dl/release.json
+    sha256sum /home/siamcar/domains/bomai.app/public_html/dl/release.json
+    sha256sum /home/siamcar/domains/bomai.app/public_html/release.json
+
+2.7 Update homepage version string (Grav markdown):
+    grep -rl "2.0.3" /home/siamcar/domains/bomai.app/public_html/user/pages/ | head -20
+    For each file with hero version: sed -i 's/เวอร์ชัน 2.0.3/เวอร์ชัน 2.0.4/g' <file>
+    CAREFUL: only change display version strings, not URLs or changelog references to v2.0.3.
+
+2.8 Verify homepage:
+    curl -s https://bomai.app/th | grep -o 'เวอร์ชัน [0-9.]*' | head -1
+    Expected: เวอร์ชัน 2.0.4
+
+    curl -s https://bomai.app/release.json | python3 -c "import json,sys; print(json.load(sys.stdin)['version'])"
+    Expected: 2.0.4
+
+────────────────────────────────────────
+PHASE 3: POST-SHIP VERIFICATION
+────────────────────────────────────────
+3.1 Download from published URLs and verify SHA:
+    Windows: curl -sL https://github.com/siamcafe/bomai/releases/download/v2.0.4/Install-BOM-AI-Online.bat -o /tmp/verify_bat.bat
+    sha256sum /tmp/verify_bat.bat → must match 58b21b88...
+
+    Linux: curl -sL https://github.com/siamcafe/bomai/releases/download/v2.0.4/install-bom-ai-linux.sh -o /tmp/verify_sh.sh
+    sha256sum /tmp/verify_sh.sh → must match a55f3a20...
+
+    macOS: curl -sL https://github.com/siamcafe/bomai/releases/download/v2.0.4/install-bom-ai-mac.zip -o /tmp/verify_mac.zip
+    sha256sum /tmp/verify_mac.zip → must match 6daa6b50...
+
+3.2 Verify bomai.app download links:
+    curl -sI "https://bomai.app/dl/Install-BOM-AI-Online.bat" | grep -E "HTTP|Content-Length"
+    curl -sI "https://bomai.app/dl/install-bom-ai-linux.sh" | grep -E "HTTP|Content-Length"
+    curl -sI "https://bomai.app/dl/install-bom-ai-mac.zip" | grep -E "HTTP|Content-Length"
+    All must return HTTP 200.
+
+3.3 Verify GitHub release is Latest:
+    curl -s https://api.github.com/repos/siamcafe/bomai/releases/latest | python3 -c "import json,sys; r=json.load(sys.stdin); print(f'tag={r[\"tag_name\"]} assets={len(r[\"assets\"])}')"
+    Expected: tag=v2.0.4 assets=3 (or 4 if release_notes included)
+
+────────────────────────────────────────
+PHASE 4: PUSH REPORT
+────────────────────────────────────────
+4.1 Push ship report to hub:
+    Create report YAML with all evidence, push as artifact.
+
+4.2 Joblog DONE:
+    curl.exe -s -A "Mozilla/5.0" -X POST -H "Authorization: Bearer [REDACTED]" -H "Content-Type: application/json" "https://hub.siam2r.com/v1/jobs/zcode/report" -d '{"status":"DONE","note":"v2.0.4 SHIPPED — GitHub release + bomai.app updated + post-ship verified","project":"bomai","step":"deploy_ship_v204"}'
+
+────────────────────────────────────────
+DECISION TABLE
+────────────────────────────────────────
+- If GitHub auth fails → BLOCKED, push files to hub, ship to bomai.app only, report
+- If GitHub release exists → upload --clobber
+- If CAT SSH fails → retry once, then BLOCKED
+- If bomai.app nginx needs reload after file update → sudo nginx -t && sudo nginx -s reload
+- If homepage version grep finds many files → only change hero version display, not changelogs
+- If post-ship SHA mismatch → CRITICAL, investigate, do not mark as shipped
+- If HuggingFace update needed → NO-OP per blueprint Section 8 (model pins unchanged, edit card only)
+- If any phase BLOCKED → continue next phase, report all at end
+
+────────────────────────────────────────
+FORBIDDEN
+────────────────────────────────────────
+- Do NOT modify sshd_config or PasswordAuthentication — SSH LOCK
+- Do NOT touch C1 (109.205.176.7) — NEVER TOUCH
+- Do NOT restart nginx on CAT (reload only)
+- Do NOT run DA build or rewrite_confs
+- Do NOT modify GOD CONFIG v9.1 or bom_runtime.py
+- Do NOT modify the installer files themselves (ship as-is from hub artifacts)
+- Do NOT touch C2 containers
+- Do NOT change DNS/resolv.conf
+- Do NOT delete v2.0.3 release or backup tag from GitHub
+- SCOPE LOCK: BOMAI project ship only
+- TAB LOCK: Do NOT rename the tab
+- 禁止重命名标签页
+
+────────────────────────────────────────
+最终回答
+────────────────────────────────────────
+Reply with exactly one fenced ```yaml code block:
+
+```yaml
+project: bomai
+step: deploy_ship_v204
+status: PASS or FAIL
+
+phase0_verify:
+  bat_sha_match: true|false
+  sh_sha_match: true|false
+  mac_sha_match: true|false
+
+phase1_github:
+  release_created: true|false|BLOCKED
+  tag: "v2.0.4"
+  assets_count: <N>
+  marked_latest: true|false
+  release_url: "..."
+
+phase2_bomai_app:
+  files_uploaded: true|false
+  release_json_updated: true|false
+  release_json_3_match: true|false
+  homepage_version: "2.0.4"
+  download_links_200: true|false
+
+phase3_post_ship:
+  github_download_sha_match: true|false
+  bomai_app_download_200: true|false
+  github_latest_tag: "v2.0.4"
+
+verdict: PASS or FAIL
+```

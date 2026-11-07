@@ -1,0 +1,211 @@
+[OPS]: Backup_Critical_Config_DB_Blueprint_To_Git_NAS [bomai]
+
+TOOL: Grok
+MODE: Cursor Agent
+MODEL: Grok 4.7 REASONING high
+PROJECT: bomai
+TAB TITLE: [OPS]: Backup_Critical_Config_DB_Blueprint_To_Git_NAS [bomai]
+Do NOT rename the tab. Tab title = exactly as pasted.
+
+OBJECTIVE
+Backup all critical [bomai] configs, DB, GOD blueprints, and docs to GitHub repo + NAS local.
+Tag as v2.0.3-backup on git. No data/models — config+DB+docs only.
+Acceptance: git tag v2.0.3-backup exists on GitHub with all critical files, NAS copy verified by sha256.
+
+Reply with exactly one fenced YAML code block:
+project: bomai
+git_tag: v2.0.3-backup
+files_backed_up: (count)
+total_size: (bytes)
+github_verified: (true/false)
+nas_verified: (true/false)
+evidence: (sha256 list)
+
+PHASE 0 — SURVEY WHAT TO BACKUP
+0.1  Read hub context:
+     curl -s -A "Mozilla/5.0" -H "Authorization: Bearer [REDACTED]" "https://hub.siam2r.com/v1/artifacts/56626/raw"
+     curl -s -A "Mozilla/5.0" -H "Authorization: Bearer [REDACTED]" "https://hub.siam2r.com/v1/artifacts/56602/raw"
+
+0.2  SSH probe all sources:
+     ssh -o ConnectTimeout=10 -p 22 bom@192.168.1.20 "echo OK-i9"
+     ssh -o ConnectTimeout=10 -p 99 bom@192.168.1.248 "echo OK-ubuntu"
+     ssh -o ConnectTimeout=10 -p 22 bom@192.168.1.254 "echo OK-mac"
+     ssh -o ConnectTimeout=10 -p 99 siamcar@122.155.168.7 "echo OK-cat"
+     ssh -o ConnectTimeout=10 -p 22 bom@192.168.1.253 "echo OK-nas"
+
+0.3  Joblog RUNNING:
+     curl -s -A "Mozilla/5.0" -H "Authorization: Bearer [REDACTED]" -H "Content-Type: application/json" -d '{"status":"RUNNING","note":"P0 survey sources","project":"bomai","step":"backup_critical_config_db_blueprint"}' "https://hub.siam2r.com/v1/jobs/grok/report"
+
+PHASE 1 — COLLECT CRITICAL FILES FROM ALL MACHINES
+Create temp workspace on i9: mkdir -p D:\BOMAI-BACKUP-v203
+
+--- 1A: i9 Desktop (LIVE install) ---
+From D:\BOMAI:
+  - state\install.json
+  - state\runtime.json (STRIP gateway_key value → replace with "REDACTED")
+  - state\install-root.txt
+  - state\active-release.txt
+  - Modelfile.bomai-safe
+  - releases\<current>\bom_runtime.py (shipping gateway)
+  - releases\<current>\config\models.json
+  - data\open-webui\webui.db (OWUI database — users, settings, models, NO chat history if large)
+
+DECISION TABLE for webui.db:
+  Get size first: (Get-Item "D:\BOMAI\data\open-webui\webui.db").Length
+  if size < 50MB → copy whole file
+  if size > 50MB → export schema + settings only (sqlite3 .dump excluding chat/message tables)
+
+--- 1B: ubuntu-ai ---
+  ssh -p 99 bom@192.168.1.248:
+  - bomai-safe modelfile: ollama show bomai-safe --modelfile > modelfile_ubuntu.txt
+  - bomai-owui service: systemctl cat bomai-owui.service > service_owui.txt
+  - bomai-searxng service: systemctl cat bomai-searxng.service > service_searxng.txt
+  - bomai-gateway service: systemctl cat bomai-gateway.service > service_gateway.txt
+  - ollama service + drop-in: systemctl cat ollama.service > service_ollama.txt; cat /etc/systemd/system/ollama.service.d/restart-limit.conf > ollama_dropin.txt
+  - litellm config: docker inspect litellm --format '{{json .Config.Env}}' > litellm_env.txt
+
+--- 1C: Mac Mini ---
+  ssh -p 22 bom@192.168.1.254:
+  - bomai-safe modelfile: ollama show bomai-safe --modelfile > modelfile_mac.txt
+  - ollama plist: cat /Library/LaunchDaemons/com.icafefx.ollama.plist > ollama_plist_mac.txt
+  - gateway config (if exists): cat /Users/bom/BOM-AI/package/shared/bom_runtime.py | head -50 > gateway_mac_head.txt
+  - .ollama/config.json: cat /Users/bom/.ollama/config.json > ollama_config_mac.txt
+
+--- 1D: CAT (bomai.app web) ---
+  ssh -p 99 siamcar@122.155.168.7:
+  - nginx vhost: cat /etc/nginx/conf.d/bomai-app.conf > nginx_bomai.conf
+  - Grav site.yaml: cat /home/siamcar/domains/bomai.app/public_html/user/config/site.yaml > grav_site.yaml
+  - Grav system.yaml: cat /home/siamcar/domains/bomai.app/public_html/user/config/system.yaml > grav_system.yaml
+  - release.json: cat /home/siamcar/domains/bomai.app/public_html/dl/release.json > release.json
+  - SSL cert info: openssl x509 -in /etc/nginx/ssl/bomai/fullchain.pem -noout -subject -dates > ssl_cert_info.txt
+
+--- 1E: GOD CONFIG + Blueprints from hub ---
+  curl hub artifacts (read raw, save to files):
+  - art#55651 GOD CONFIG v9.0 → god_config_v90.yaml
+  - art#55907 GOD BLUEPRINT v5.2 → god_blueprint_v52.md
+  - art#55908 GOD HOW-TO v4.2 → god_howto_v42.md
+  - art#56535 K3 GOD BLUEPRINT HF-1.0 → k3_blueprint_hf10.md
+  - art#56626 Ship report v2.0.3 → ship_report_v203.yaml
+  - art#56602 Atom survey report → atom_survey.yaml
+
+--- 1F: HOW-TO / Docs ---
+  From GitHub repo (already on i9 from previous work):
+  - README.md (v2.0.3 version)
+  - LICENSE
+  - Any .md docs in repo
+
+PHASE 2 — ORGANIZE INTO GIT STRUCTURE
+On i9 in D:\BOMAI-BACKUP-v203, organize:
+
+  backup/
+    README.md  (auto-generated: what this backup contains, date, v2.0.3)
+    config/
+      i9/
+        install.json
+        runtime.json (REDACTED)
+        Modelfile.bomai-safe
+        models.json
+      ubuntu-ai/
+        modelfile_bomai_safe.txt
+        service_owui.txt
+        service_searxng.txt
+        service_gateway.txt
+        service_ollama.txt
+        ollama_dropin.txt
+        litellm_env.txt
+      mac/
+        modelfile_bomai_safe.txt
+        ollama_plist.txt
+        ollama_config.json
+        gateway_head.txt
+      cat/
+        nginx_bomai.conf
+        grav_site.yaml
+        grav_system.yaml
+        release.json
+        ssl_cert_info.txt
+    db/
+      webui.db (or schema dump if large)
+    gateway/
+      bom_runtime.py (shipping version, sha256=054ed6b1...)
+    blueprints/
+      god_config_v90.yaml
+      god_blueprint_v52.md
+      god_howto_v42.md
+      k3_blueprint_hf10.md
+    reports/
+      ship_report_v203.yaml
+      atom_survey.yaml
+    docs/
+      README.md
+      LICENSE
+
+PHASE 3 — PUSH TO GITHUB + TAG
+3.1  cd to local repo clone on i9:
+     cd <repo path> (or git clone fresh if needed)
+     git checkout main
+     git pull origin main
+
+3.2  Copy backup folder into repo:
+     Copy-Item D:\BOMAI-BACKUP-v203\backup -Destination .\backup -Recurse -Force
+
+3.3  Commit + push:
+     git add backup/
+     git commit -m "backup: v2.0.3 critical config, DB, blueprints, docs (2026-11-06)"
+     git push origin main
+
+3.4  Create tag:
+     git tag -a v2.0.3-backup -m "Critical backup: config + DB + GOD blueprints + docs for v2.0.3 HF-1.0 (2026-11-06)"
+     git push origin v2.0.3-backup
+
+3.5  Verify:
+     gh release list --repo siamcafe/bomai
+     git tag -l | grep backup
+
+PHASE 4 — COPY TO NAS
+4.1  Create backup folder on NAS:
+     ssh -p 22 bom@192.168.1.253 "mkdir -p /volume1/backups/bomai/v2.0.3-backup-20261106"
+
+4.2  SCP entire backup folder:
+     scp -r -P 22 D:\BOMAI-BACKUP-v203\backup bom@192.168.1.253:/volume1/backups/bomai/v2.0.3-backup-20261106/
+
+DECISION TABLE:
+  if NAS SSH fails → try alternate path /volume1/docker/backups/bomai/ or /volume1/homes/bom/backups/
+  if SCP fails → try rsync
+  if NAS unreachable → record BLOCKED, GitHub backup is sufficient
+
+4.3  Verify NAS copy:
+     ssh -p 22 bom@192.168.1.253 "find /volume1/backups/bomai/v2.0.3-backup-20261106 -type f | wc -l"
+     ssh -p 22 bom@192.168.1.253 "sha256sum /volume1/backups/bomai/v2.0.3-backup-20261106/gateway/bom_runtime.py"
+     Expected: matches shipping sha256
+
+PHASE 5 — CLEANUP + REPORT
+5.1  Remove temp folder:
+     Remove-Item D:\BOMAI-BACKUP-v203 -Recurse -Force
+
+5.2  Verify production untouched:
+     curl -s http://127.0.0.1:11435/api/version
+     curl -s http://127.0.0.1:8080/api/version
+
+5.3  Upload report:
+     curl -s -A "Mozilla/5.0" -H "Authorization: Bearer [REDACTED]" -F "file=@report.yaml" -F "project=bomai" "https://hub.siam2r.com/v1/artifacts"
+
+5.4  Joblog DONE:
+     curl -s -A "Mozilla/5.0" -H "Authorization: Bearer [REDACTED]" -H "Content-Type: application/json" -d '{"status":"DONE","note":"backup v2.0.3-backup complete on GitHub + NAS","project":"bomai","step":"backup_critical_config_db_blueprint"}' "https://hub.siam2r.com/v1/jobs/grok/report"
+
+SCOPE LOCK
+IN: read configs/DB/docs from i9+ubuntu-ai+Mac+CAT+hub, write to GitHub repo backup/ + NAS.
+OUT: modify any config, restart any service, touch production data.
+
+SSH LOCK
+NEVER modify sshd/PasswordAuthentication/authorized_keys. READ-ONLY on all machines except i9 temp folder.
+
+FORBIDDEN
+- Modify any production config or service
+- Include gateway_key plaintext (REDACT)
+- Include any API key/token/password in backup (REDACT all)
+- Touch D:\BOMAI live processes
+- Include Ollama model weights/blobs (too large, config only)
+- Include chat history (privacy)
+- sshd/DNS changes
+- Paid API

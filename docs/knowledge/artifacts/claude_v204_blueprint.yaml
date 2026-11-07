@@ -1,0 +1,201 @@
+project: bomai
+document: v2.0.4 Reinstall/Uninstall Fix Blueprint
+author: Claude (prompt writer)
+date: 2026-11-07
+source: Grok atom survey art#57343 (BAT 2338 lines, 10 critical issues)
+purpose: Blueprint for zcode to fix Install-BOM-AI-Online.bat
+
+# ────────────────────────────────────────
+# OWNER REQUIREMENTS (verbatim)
+# ────────────────────────────────────────
+# 1. ติดตั้งซ้ำจะต้องไม่มีปัญหา
+# 1.1 สามารถ uninstall หรือ replace ติดตั้งซ้ำได้
+# 1.2 กรณี process ค้างยิ่งดีเพราะต้องแจ้งเตือน user และ auto kill process
+# 1.3 ทำอย่างไรก็ได้ให้ ทำได้ทั้ง ติดตั้ง และ ถอน ระบบ bomai
+# 2. QC street test ตอนจบ
+# 3. ship ทดสอบให้ครบ ทุก OS
+
+# ────────────────────────────────────────
+# 10 ISSUES FROM GROK SURVEY → FIX PLAN
+# ────────────────────────────────────────
+
+issues:
+  # ═══════ PRIORITY 1: UNINSTALL MUST WORK ═══════
+
+  - id: FIX-01
+    title: "Uninstall cannot stop OWUI/SearXNG — pid points at powershell.exe"
+    severity: HIGH
+    grok_evidence: "pid files store powershell.exe path, ownership test checks ExecutablePath starts with install root, powershell.exe is System32"
+    fix_logic: |
+      BEFORE uninstall delete:
+      1. Stop by PORT — find process on 8080 (OWUI), 8888 (SearXNG), 11435 (gateway)
+         PowerShell: Get-NetTCPConnection -LocalPort 8080 -State Listen | ForEach { Stop-Process -Id $_.OwningProcess -Force }
+      2. Stop by command line match — Get-CimInstance Win32_Process where CommandLine contains install root
+      3. Stop Ollama on 11434 ONLY IF the bat installed it (check install.json flag)
+      4. Wait 3 seconds, verify ports freed
+      5. Then proceed with file deletion
+    bat_lines: "1640-1646 (ownership test), 1167-1170 (pid write)"
+    scope: Windows BAT only (macOS/Linux use different process model)
+
+  - id: FIX-02
+    title: "Uninstall does not remove Ollama or model blobs"
+    severity: HIGH
+    grok_evidence: "line 314 says Ollama not uninstalled, model checkbox only runs ollama rm for 2 aliases"
+    fix_logic: |
+      Add uninstall option: "Remove Ollama completely" (default OFF)
+      When ON:
+      1. ollama rm bomai-safe, ollama rm bomai-pro (existing logic)
+      2. ollama rm siamcafe/bom-ai:light-v2.0.0, ollama rm siamcafe/bom-ai:pro-v2.0.0
+      3. Check if user has OTHER models (ollama list). If yes → warn "Ollama has other models, keeping Ollama"
+      4. If no other models → run Ollama uninstaller: "%LOCALAPPDATA%\Programs\Ollama\unins000.exe" /VERYSILENT
+      5. Clean orphan blobs: if models dir empty after rm → delete OLLAMA_MODELS dir
+      NOTE: Only remove Ollama if BOM AI installed it (check install.json flag "ollama_installed_by_bomai": true)
+    bat_lines: "1722-1735 (model checkbox), 314 (note)"
+
+  - id: FIX-03
+    title: "Model checkbox measures wrong folder + only works if Ollama is up"
+    severity: MEDIUM
+    grok_evidence: "size text measures %USERPROFILE%\\.ollama\\models but installer uses OLLAMA_MODELS or %LOCALAPPDATA%\\Ollama\\models"
+    fix_logic: |
+      1. Resolve model store path same way as install: check OLLAMA_MODELS env, then %LOCALAPPDATA%\Ollama\models
+      2. Measure THAT path for size display
+      3. If Ollama is not running → start it temporarily, do ollama rm, then stop it
+      4. After ollama rm → check for orphan blobs and delete if no manifests reference them
+    bat_lines: "2264 (size calc), 1273-1275 (store resolution)"
+
+  # ═══════ PRIORITY 2: REINSTALL MUST BE SAFE ═══════
+
+  - id: FIX-04
+    title: "Update/Repair forces Light tier — Pro user loses tier"
+    severity: HIGH
+    grok_evidence: "GUI Light radio hard-checked at line 1883, Update/Repair never loads install.json tier"
+    fix_logic: |
+      On already-installed page (Update/Repair):
+      1. Read tier from install.json
+      2. Pre-select the correct radio button (Light or Pro)
+      3. If user changes tier → warn "This will change your model tier"
+    bat_lines: "1883 (hard-check), 2311-2336 (already-installed page)"
+
+  - id: FIX-05
+    title: "Fresh-dir re-run overwrites OWUI config keys"
+    severity: MEDIUM
+    grok_evidence: "seed script uses ON CONFLICT DO UPDATE for default_models, locale, search URL etc."
+    fix_logic: |
+      In seed_owui_bomai.py:
+      1. Change ON CONFLICT DO UPDATE → ON CONFLICT DO NOTHING for user-facing config keys
+      2. Only force-update system keys (OLLAMA_BASE_URL, OPENAI_API_KEY, gateway_key)
+      3. Keep user's changed locale, default_models, search settings
+      Exception: if install.json has "force_reseed": true → overwrite all (for breaking changes)
+    bat_lines: "1176-1191 (seed call)"
+
+  - id: FIX-06
+    title: "Ollama must be exactly 0.40.13 — any other version blocked"
+    severity: MEDIUM
+    grok_evidence: "E-OLLAMA if version != 0.40.13"
+    fix_logic: |
+      1. Accept compatible range: 0.40.x (minor patch OK)
+      2. If major version differs (0.41+) → warn but allow with confirmation
+      3. If Ollama too old (< 0.40.0) → offer to upgrade
+      4. Store accepted version in install.json for future reference
+    bat_lines: "786-798 (version check)"
+
+  # ═══════ PRIORITY 3: UX IMPROVEMENTS ═══════
+
+  - id: FIX-07
+    title: "30GB free check runs on verify-only path"
+    severity: LOW
+    grok_evidence: "lines 671-672 check disk even when install is COMPLETE"
+    fix_logic: |
+      Skip disk check when:
+      - status is COMPLETE AND
+      - resumeKey matches (same version, same root, same tier)
+      Only check disk on fresh install or upgrade
+    bat_lines: "671-672 (disk check)"
+
+  - id: FIX-08
+    title: "Console mode ignores install-root.txt → creates second copy"
+    severity: MEDIUM
+    grok_evidence: "console mode does not honor install-root.txt, can create second tree then retarget pointer"
+    fix_logic: |
+      In console mode:
+      1. Read install-root.txt first
+      2. If COMPLETE install exists at that path → use it (same as GUI)
+      3. If user passes BOMAI_ROOT_OVERRIDE → warn if different from existing install
+      4. Never silently create a second tree
+    bat_lines: "174-186 (pointer logic), 780 (root write)"
+
+  - id: FIX-09
+    title: "Shortcut removal depends on path containing BOMAI"
+    severity: LOW
+    grok_evidence: "line 1661 checks Arguments match *BOMAI*"
+    fix_logic: |
+      1. Store shortcut paths in install.json during creation
+      2. On uninstall → delete stored paths directly instead of pattern match
+      3. Fallback: also search by target exe path matching install root
+    bat_lines: "1661 (shortcut cleanup)"
+
+  - id: FIX-10
+    title: "Already-installed page shows release path instead of version"
+    severity: LOW
+    grok_evidence: "line 2326 prints install.json rel (release dir path) in version slot"
+    fix_logic: |
+      Read version from install.json "version" field, not "rel" field.
+      Display: "BOM AI v2.0.3 (installed at <root>)" instead of the build path.
+    bat_lines: "2326 (version display)"
+
+# ────────────────────────────────────────
+# ADDITIONAL: PROCESS DETECTION + AUTO-KILL
+# ────────────────────────────────────────
+# Owner requirement 1.2: "process ค้างยิ่งดี ต้องแจ้งเตือน user และ auto kill"
+
+process_management:
+  on_install:
+    - "Check ports 8080, 8888, 11434, 11435 before install"
+    - "If any is busy AND belongs to previous BOM AI install → auto-stop with log message"
+    - "If busy AND NOT BOM AI → warn user, offer to continue or abort"
+  on_uninstall:
+    - "Stop all BOM AI processes by port + command line match"
+    - "Wait 5 seconds, verify all ports freed"
+    - "If stuck → force kill with warning"
+  on_reinstall:
+    - "Same as install — stop old processes first"
+    - "Preserve: chat history (webui.db), user-edited config, extra models"
+    - "Replace: binaries, venv, gateway, modelfile"
+
+# ────────────────────────────────────────
+# INSTALL.JSON NEW FIELDS
+# ────────────────────────────────────────
+new_install_json_fields:
+  - "ollama_installed_by_bomai: true|false (track if we installed Ollama)"
+  - "tier: light|pro (preserve across updates)"
+  - "version: 2.0.4 (display version, not path)"
+  - "shortcut_paths: [...] (track created shortcuts)"
+  - "ollama_version_accepted: 0.40.13 (version at install time)"
+
+# ────────────────────────────────────────
+# SCOPE: WINDOWS FIRST, THEN macOS/Linux
+# ────────────────────────────────────────
+# Phase B: Fix BAT (Windows) — this is the big one, 2338 lines
+# Phase C: Apply same patterns to .command (macOS) and .sh (Linux)
+# Phase D: QC street test all 3 OS
+# Phase E: Ship v2.0.4
+
+# ────────────────────────────────────────
+# TESTING MATRIX (for QC street test)
+# ────────────────────────────────────────
+test_matrix:
+  windows:
+    - "T1: Fresh install on clean machine → verify all works"
+    - "T2: Run BAT again (same version) → verify reused_verified_existing, no data loss"
+    - "T3: Uninstall with defaults → verify files removed, chats kept, Ollama kept"
+    - "T4: Uninstall with remove-data ON → verify chats deleted"
+    - "T5: Uninstall with remove-ollama ON → verify Ollama removed"
+    - "T6: Reinstall after uninstall → verify clean install works"
+    - "T7: User has existing Ollama with other models → verify not affected"
+    - "T8: Process stuck (kill OWUI manually mid-run) → verify uninstall handles it"
+    - "T9: Console mode with existing GUI install → verify no second copy"
+    - "T10: Pro tier Update/Repair → verify tier preserved"
+  macos:
+    - "T1-T6 equivalent for .command installer"
+  linux:
+    - "T1-T6 equivalent for .sh installer"

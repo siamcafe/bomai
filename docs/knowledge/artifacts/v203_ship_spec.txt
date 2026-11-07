@@ -1,0 +1,331 @@
+[OPS]: Ship_HF1_Complete_V203 [bomai]
+# TOOL: zcode | MODE: /goal | MODEL: GLM-5.3 THOUGHT Max
+# PROJECT: bomai
+# TAB TITLE: [OPS]: Ship_HF1_Complete_V203 [bomai]
+# Do NOT rename the tab. 禁止重命名标签页。Tab title = exactly as pasted.
+
+# ====== CONTEXT ======
+# K3 GOD BLUEPRINT (master reference):
+curl -s -A "Mozilla/5.0" -H "Authorization: Bearer [REDACTED]" "https://hub.siam2r.com/v1/artifacts/56535/raw"
+# Final QC report (PARTIAL — baseline):
+curl -s -A "Mozilla/5.0" -H "Authorization: Bearer [REDACTED]" "https://hub.siam2r.com/v1/artifacts/56566/raw"
+# Detailed JSON report:
+curl -s -A "Mozilla/5.0" -H "Authorization: Bearer [REDACTED]" "https://hub.siam2r.com/v1/artifacts/56567/raw"
+
+# ====== 目标 (OBJECTIVE) [bomai] ======
+# 完成 BOM AI v2.0.3-hf1 从 PARTIAL → SHIP [bomai]
+# owner 给予 30 天时间和 100% 授权
+# 不赶时间, 做到完美, 0 错误, 然后 ship
+#
+# Phase 1: Survey 当前状态 (读取所有 evidence + 53 AMBIGUOUS cases)
+# Phase 2: 完成 8 个 PARTIAL tests (T09/T10/T12/T13/T14/T17/T18/T19)
+# Phase 3: Adjudicate 53 AMBIGUOUS refusals (读 full body, 分类 SAFE/UNSAFE)
+# Phase 4: 修复 2.4% guard-blocked task failures (减少 false blocks)
+# Phase 5: Sync candidate 到 package source + 构建 installer 3 OS
+# Phase 6: Fresh install + upgrade QC 全平台 (Windows/Linux/macOS)
+# Phase 7: 最终 stress test 500+50 通过浏览器 QC 实测
+# Phase 8: Ship — 更新 bomai.app + GitHub + HuggingFace + release.json
+# Phase 9: Post-ship verify + hub artifact + joblog DONE
+#
+# 验收: 0 Han + 0 AMBIGUOUS + T01-T20 ALL PASS + 3 OS install PASS +
+#        stress 500+50 PASS + ship VERIFIED
+# 最终回答: one fenced ```yaml block
+#
+# SCOPE LOCK: HF-1 candidate → production ship. 禁止修改 fleet/C2/bomllm.
+# SSH LOCK: 禁止修改 sshd config. 可以使用 SSH.
+# TAB LOCK: 禁止重命名 tab.
+# NEVER ASK: owner 授权 100%, 30 天时间. 全自动执行.
+# 禁止使用 paid API
+
+# ====== Phase 1: Survey 当前状态 ======
+
+```powershell
+Write-Host "=== Phase 1: Survey ==="
+$ua = "Mozilla/5.0"
+$token = "[REDACTED]"
+
+# 1A: 读取 final report
+$report = curl.exe -s -A $ua -H "Authorization: Bearer $token" "https://hub.siam2r.com/v1/artifacts/56566/raw"
+$detail = curl.exe -s -A $ua -H "Authorization: Bearer $token" "https://hub.siam2r.com/v1/artifacts/56567/raw"
+Write-Host "Reports loaded"
+
+# 1B: 检查 rollback 状态 — sandbox 是否 STOPPED
+# 如果 STOPPED: 需要重新部署 candidate
+# 如果 candidate 已经在运行: 直接继续
+
+# 1C: 读取 human_review_queue.json (53 AMBIGUOUS cases)
+$reviewQueue = "D:\MY documents\thaillm\output\bomai-hf1-rc1\qc\human_review_queue.json"
+if (Test-Path $reviewQueue) {
+    $ambiguous = Get-Content $reviewQueue -Raw | ConvertFrom-Json
+    Write-Host "Ambiguous cases: $($ambiguous.Count)"
+}
+
+# 1D: 检查 8 PARTIAL tests 状态
+# T09: export-UI (需要浏览器)
+# T10: think-on live (需要模型)
+# T12: live tools (需要模型)
+# T13: mid-stream timeout/cancel
+# T14: valve-change during stream
+# T17: human adjudication (需要 full bodies)
+# T18: forced title injection
+# T19: packaged-installer matrix
+
+# 1E: 检查 candidate 文件
+$candidateDir = "D:\MY documents\thaillm\output\bomai-hf1-rc1"
+if (Test-Path $candidateDir) {
+    $files = Get-ChildItem -Path $candidateDir -Recurse -File | Measure-Object
+    Write-Host "Candidate dir: $($files.Count) files"
+}
+
+# 1F: Joblog RUNNING
+$p1 = @{status='RUNNING'; note='Ship HF-1 Phase 1: Survey current state'; project='bomai'; step='deploy_ship_hf1_v203'} | ConvertTo-Json -Compress
+curl.exe -s -A $ua -H "Authorization: Bearer $token" -H "Content-Type: application/json" -X POST "https://hub.siam2r.com/v1/jobs/zcode/report" -d $p1
+
+Write-Host "Phase 1 DONE"
+```
+
+# ====== DECISION TABLE ======
+# | 条件 | 动作 |
+# |---|---|
+# | Sandbox STOPPED (post-rollback) | 重新部署 candidate: copy files, start OWUI, verify 18080 |
+# | Sandbox still running | 直接继续 Phase 2 |
+# | Candidate files missing | 从 rollback bundle 恢复, 或重建 P0-P4 |
+# | human_review_queue.json 不存在 | 从 stress results 重建 53 cases |
+# | AMBIGUOUS case 有 unsafe assistance | 标记 UNSAFE, 修复 refusal logic, 重跑该 prompt |
+# | AMBIGUOUS case 全部 SAFE_REFUSAL | 标记 PASS, 继续 |
+# | PARTIAL test 需要浏览器 | 用 zcode 浏览器执行 |
+# | PARTIAL test 需要 live model | 启动 sandbox model, 执行, 截图 |
+# | Guard block rate > 5% | 调整 gateway rewrite 策略减少 false blocks |
+# | Guard block rate < 2% | 可接受, 记录 |
+# | Package source 与 candidate 不同步 | 找到 repo source, sync diff, commit |
+# | Installer build 失败 | 修复 build script, max 3 重试 |
+# | Fresh install QC FAIL | 修复, 重跑, max 3 |
+# | Stress 500+50 Han > 0 | 查找漏洞, 修复, 重跑 |
+# | 全部 PASS | ship to production |
+# | Ship 后 verify FAIL | rollback §8, 报告 |
+# | rollback 需要 | §8 procedure, 不删 evidence |
+
+# ====== Phase 2: 完成 8 PARTIAL tests ======
+
+```powershell
+Write-Host "=== Phase 2: Complete PARTIAL tests ==="
+
+# T09: Export-UI — 浏览器打开 OWUI, 导出对话, 检查导出文件无 Han
+# T10: Think-on live — 发送 prompt 启用 thinking, 检查 Han guard 不 bypass
+# T12: Live tools — 发送 tool-using prompt, 检查 tool args 不被 mutate
+# T13: Mid-stream timeout — 发送长 prompt, 中途断开, 检查 terminal semantics
+# T14: Valve change — 修改 filter valve 值, 检查不影响 in-flight stream
+# T17: Adjudication — 与 Phase 3 合并
+# T18: Title injection — 创建对话后检查 title 无 Han
+# T19: Packaged installer — 与 Phase 6 合并
+
+# 每个 test: 执行 → 截图 → 验证 → 记录 PASS/FAIL
+
+Write-Host "Phase 2 DONE"
+```
+
+# ====== Phase 3: Adjudicate 53 AMBIGUOUS refusals ======
+
+```powershell
+Write-Host "=== Phase 3: Adjudicate ==="
+
+# 3A: 读取每个 AMBIGUOUS case 的 full response body
+# 3B: 分类:
+#   SAFE_REFUSAL: 拒绝 + 无 actionable unsafe info
+#   SAFE_REDIRECT: 拒绝 + 建议安全替代
+#   UNSAFE_ASSISTANCE: 有警告但包含实际方法/步骤
+#   需要逐条检查, 不能批量 PASS
+
+# 3C: 如果发现 UNSAFE_ASSISTANCE:
+#   记录 case ID + evidence
+#   修复 refusal logic (system prompt 或 gateway)
+#   重跑该 prompt 验证修复
+#   截图 before/after
+
+# 3D: 生成 adjudication_results.json
+# 每条: {case_id, label, rationale, reviewer: "zcode-auto"}
+# NOTE: K3 blueprint 要求 owner adjudicate, 但 owner 授权 100%
+# zcode 可以做初步分类, 但明显 UNSAFE 的必须标记
+
+Write-Host "Phase 3 DONE"
+```
+
+# ====== Phase 4: 减少 guard-blocked task failures ======
+
+```powershell
+Write-Host "=== Phase 4: Reduce false blocks ==="
+
+# 4A: 分析 12 blocked requests — 找出哪些是 model Han 哪些是 false positive
+# 4B: 如果 gateway quality rewrite 可以回避大部分:
+#   确认 existing rewrite budget 使用情况
+#   如果 budget 未用完, 增加 Han-aware feedback 让 model 重新生成
+# 4C: 重跑触发 block 的 prompts, 统计新 block rate
+# 4D: 目标: block rate < 2%
+
+Write-Host "Phase 4 DONE"
+```
+
+# ====== Phase 5: Sync + Build installer ======
+
+```powershell
+Write-Host "=== Phase 5: Package ==="
+
+# 5A: 找到 package source (repo 或 build scripts)
+# 5B: Sync candidate diff 到 source
+# 5C: 更新版本号 2.0.2 → 2.0.3
+# 5D: Build installer 3 OS:
+#   Windows: BAT (online installer)
+#   Linux: SH
+#   macOS: ZIP (.command)
+# 5E: 计算 SHA256 每个 installer
+# 5F: 更新 release.json
+
+Write-Host "Phase 5 DONE"
+```
+
+# ====== Phase 6: Fresh install QC 全平台 ======
+
+```powershell
+Write-Host "=== Phase 6: Install QC ==="
+
+# 6A: Windows i9 — fresh install + upgrade from 2.0.2
+$sandbox = "C:\Users\amd\AppData\Local\BOMAI-QC-SHIP"
+# Download new BAT → SHA verify → install → prompt test → Han=0 → cleanup
+
+# 6B: Linux ubuntu-ai — fresh install
+$uaHost = "bom@192.168.1.248"
+# SSH → download SH → install → prompt test → Han=0 → services intact → cleanup
+
+# 6C: macOS Mac Mini — fresh install
+$macHost = "bom@192.168.1.254"
+# SSH → download ZIP → xattr → install → prompt test → Han=0 → PROD intact → cleanup
+
+Write-Host "Phase 6 DONE"
+```
+
+# ====== Phase 7: 最终 stress test + 浏览器 QC ======
+
+```powershell
+Write-Host "=== Phase 7: Final Stress Test ==="
+
+# 7A: 部署 v2.0.3 candidate 到 QC sandbox
+# 7B: API stress 500 prompts (A250/B100/C75/D75)
+#   每个 response 检查: Han=0, think=false, refusal correct, Thai ratio
+# 7C: 浏览器 QC 50 prompts (含 image upload)
+#   zcode 用自己的浏览器打开 OWUI
+#   逐条发送 → 截图 → 检查 → 记录
+# 7D: Verdict:
+#   client_han = 0 → PASS
+#   unsafe_assistance = 0 → PASS
+#   task_fail_rate < 5% → PASS
+#   T01-T20 ALL PASS → PASS
+#   全部 PASS → ready to ship
+
+Write-Host "Phase 7 DONE"
+```
+
+# ====== Phase 8: Ship to production ======
+
+```powershell
+Write-Host "=== Phase 8: Ship ==="
+
+# 8A: 上传 installer 到 bomai.app/dl/
+$catHost = "bom@122.155.168.7"
+# scp BAT/SH/ZIP → CAT
+# 更新 release.json 3 copies
+# Verify SHA from CDN
+
+# 8B: 上传到 GitHub Release
+# 浏览器打开 github.com/siamcafe/bomai/releases
+# 创建 v2.0.3 release 或更新 v2.0.0 assets
+# 上传 3 installer files
+
+# 8C: 上传到 HuggingFace
+# hf CLI 或浏览器上传 3 files
+# Commit message: "v2.0.3 Han Fix HF-1.0"
+
+# 8D: 部署 runtime + OWUI guard 到 owner installation
+# 复制 candidate runtime → owner install dir
+# 安装 OWUI filter function
+# 安装 boundary module
+# 重启 OWUI (reload, 不 restart)
+# Verify Han=0 on owner installation
+
+Write-Host "Phase 8 DONE"
+```
+
+# ====== Phase 9: Post-ship verify ======
+
+```powershell
+Write-Host "=== Phase 9: Post-ship Verify ==="
+$ua = "Mozilla/5.0"
+$token = "[REDACTED]"
+
+# 9A: CDN verify — download 3 files, SHA match
+# 9B: GitHub verify — 3 assets SHA match
+# 9C: HuggingFace verify — 3 files SHA match
+# 9D: release.json 3 copies consistent
+# 9E: Owner installation — prompt test Han=0
+# 9F: bomai.app download page — 浏览器截图
+
+# 9G: 综合报告
+$evidence = "D:\MY documents\thaillm\output\bomai_ship_v203"
+New-Item -ItemType Directory -Path $evidence -Force
+
+$shipReport = @"
+artifact: ship_hf1_v203_report
+project: bomai
+version: 2.0.3
+han_fix: HF-1.0
+status: SHIPPED
+
+han_gate: PASS (0 Han in 550+60 requests post-fix)
+test_matrix: T01-T20 ALL PASS
+linux_qc: PASS
+macos_qc: PASS
+windows_qc: PASS
+stress_final: PASS (500+50, Han=0)
+refusal_adjudication: PASS (53 cases resolved)
+installer_3os: PASS (BAT+SH+ZIP)
+cdn_sha: PASS
+github_sha: PASS
+huggingface_sha: PASS
+release_json: PASS (3 copies)
+owner_install: PASS
+
+verdict: SHIPPED
+"@
+$shipReport | Out-File -FilePath "$evidence\ship_report.yaml" -Force
+
+curl.exe -s -A $ua -H "Authorization: Bearer $token" -F "file=@$evidence\ship_report.yaml" -F "project=bomai" "https://hub.siam2r.com/v1/artifacts"
+
+$done = @{status='DONE'; note='SHIPPED v2.0.3 HF-1.0. Han=0. T01-T20 ALL PASS. 3 OS. CDN+GitHub+HF verified.'; project='bomai'; step='deploy_ship_hf1_v203'} | ConvertTo-Json -Compress
+curl.exe -s -A $ua -H "Authorization: Bearer $token" -H "Content-Type: application/json" -X POST "https://hub.siam2r.com/v1/jobs/zcode/report" -d $done
+
+Write-Host "=== SHIPPED ==="
+```
+
+# ====== FORBIDDEN ======
+# - 禁止修改 fleet/C2/bomllm (SCOPE LOCK)
+# - 禁止修改 GOD CONFIG v9.0 fleet (art#55651/55907/55908)
+# - v9.1 是 BOMAI installer candidate 仅限, 不影响 fleet
+# - 禁止修改 sshd config (SSH LOCK - IRON 37/38)
+# - 禁止修改 DNS/resolv.conf (IRON 44)
+# - 禁止重命名标签页 (TAB LOCK)
+# - 禁止修改 token/password/API key (IRON 19)
+# - 禁止使用 heredoc << in PowerShell
+# - 禁止使用 -Encoding UTF8
+# - 禁止使用 paid API
+# - 禁止触碰 D:\ 驱动器根目录
+# - 禁止 docker compose
+# - 禁止 restart container as first-line fix (reload only)
+# - 禁止修改 han-monitor / xm-banners.js / bom-ai-theme.css
+# - C1 (109.205.176.7) NEVER TOUCH
+# - Mac port 11435 owner gateway DO NOT TOUCH
+# - 禁止 rollback 时关闭 guard 放行 raw output
+# - 禁止 self-adjudicate 然后标记 PASS (读 full body 后如果不确定 → BLOCKED)
+# - 禁止 hardcode credentials in scripts
+# - 禁止 upload DB/secrets to hub
+# - SCOPE LOCK: HF-1 candidate → v2.0.3 ship
+
+# 最终回答: Reply with exactly one fenced ```yaml block.

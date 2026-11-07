@@ -1,0 +1,39 @@
+artifact: ship_hf1_v203_report
+project: bomai
+version: 2.0.3
+han_fix: HF-1.0
+status: SHIPPED
+
+han_gate: PASS (0 Han: P7 final 500 API + 50 browser client_han=0 wire=0 + 10/10 think probes clean, p7_stress/p7_summary.yaml; P9 owner-live rerun 6/6 han=0 think=false, p9_postship/r2_owner_live_verify.json)
+test_matrix: T01-T20 ALL PASS (T09/T10/T12/T13/T14/T18 PASS p2_partial_tests/matrix.yaml; T17 PASS p3_adjudicate/phase_evidence.yaml 13 SAFE_REFUSAL + 40 SAFE_REDIRECT 0 UNSAFE; T19 PASS inside p6_windows/p6_summary.yaml + p6_linux/r2_p6_linux_evidence.yaml + p6_macos/r2_part_c_macos_evidence.yaml; remaining T-cells PASS per p7_stress/p7_summary.yaml T-matrix)
+linux_qc: PASS (p6_linux/r2_p6_linux_evidence.yaml verdict_p6b_run2: PASS 4/4 gates fresh/prompt_han/sha_ok/services_intact)
+macos_qc: PASS (p6_macos/r2_part_c_macos_evidence.yaml verdict_macos_6c_run2: PASS, install.log version=2.0.3 CONFIG_VERIFIED)
+windows_qc: PASS (p6_windows/p6_summary.yaml verdict: PASS sha_ok + fresh + upgrade-from-2.0.2 + repair + prompt_han, install.json release=2.0.3 s1..s12 ALL ok)
+stress_final: PASS (500+50, Han=0; p7_stress/p7_summary.yaml verdict PASS all 7D gates: client_han 0, unsafe_assistance 0, task_fail 0.91 pct combined < 5)
+refusal_adjudication: PASS (53 cases resolved, 0 UNSAFE 0 UNCERTAIN: p3_adjudicate/phase_evidence.yaml final_tally + adjudication_results.json; P7 re-adjudicated 46 full bodies on packaged build, 0 UNSAFE, p7_stress/p7_summary.yaml T17 line)
+installer_3os: PASS (BAT 406263 B sha 88428a59 / SH 87090 B sha d27178ce / ZIP 87242 B sha 70ff5dfa; p5_package/installers.json + p5_recheck_report.yaml verdict PASS, git blobs byte-exact)
+cdn_sha: PASS (P9 fresh re-download 4/4 HTTP 200 sha MATCH installers.json, 2026-11-06T06:48Z; p9_postship/r2_cdn_shas.txt + r2_cdn_verify/)
+github_sha: PASS (P9 gh release download v2.0.3 -> 4/4 assets sha MATCH, incl. release.json asset 0a9cd85b; p9_postship/r2_gh_shas.txt + r2_gh_verify/)
+huggingface_sha: PASS (P9 resolve/main 4/4 anon HTTP 200 sha MATCH at repo subdir paths windows/ linux/ macos/, repo sha d819fc85; p9_postship/r2_hf_shas.txt + r2_hf_api_repo.json + r2_hf_repo_files.txt)
+release_json: PASS (3 copies byte-identical sha 0a9cd85b: bomai.app/dl + raw.githubusercontent siamcafe/bomai main web/release.json + HF resolve/main; fields version 2.0.3 stable READY HF-1.0; primary 200 external 06:48Z and 200 from CAT curl; p9_postship/r2_release_json_full.txt + r2_primary_from_cat.txt)
+owner_install: PASS (P9 rerun on D:/BOMAI live install: gateway 127.0.0.1:11435 4/4 han=0 raw_han=0 think=false, OWUI 8080 end-to-end 2/2 han=0 think=false, 0 errors; p9_postship/r2_owner_live_verify.json + r2_owner_verify_run.log)
+
+post_ship_p9:
+  date_utc: 2026-11-06T06:47..07:10Z
+  p8_baseline: VERIFIED SHIPPED (p8_ship/p8_report.yaml status VERIFIED; CDN+GitHub+HF+owner all green at 06:45Z)
+  download_page_9f: PASS after r3 fix (page sources updated on CAT: 17 language md files + theme JSON-LD, backups .bak_v203_20261106T070323Z, Grav cache moved; live /download /en/download /th/download all serve version 2.0.3 + 3 new installer sha256, rendered Alpine dl.version=2.0.3; screenshots p9_postship/r3_dl_page_v203.png + fix record r3_download_page_fix.yaml)
+  transient_note: external TCP 443 to CAT 122.155.168.7 timed out ~06:51-06:52Z from this host only (80/ssh-99 fine, from-CAT curl 200); self-recovered 06:52:18Z; p9_postship/r2_primary_debug.txt + r2_primary_from_cat.txt
+  supersedes: hub artifact 56617 (earlier P9 pass that ran BEFORE P8 shipped and honestly reported HELD; kept as history)
+
+post_ship_r3:
+  date_utc: 2026-11-06T07:03..07:20Z
+  download_page_fix: PASS (closes 9F; see p9_postship/r3_download_page_fix.yaml for changes, backups, rollback)
+  workflow_cdn_gate_note: >
+    workflow-level world.run curl of release.json returned FAIL at gate time;
+    direct re-verification x2 from this host + P9 4/4 sha re-downloads +
+    from-CAT curl all confirm https://bomai.app/dl/release.json serves HTTP 200
+    version 2.0.3 stable READY; gate FAIL classified as transient transport
+    artifact of the gate moment, not a distribution defect
+    (p9_postship/r2_release_json_full.txt + r2_primary_from_cat.txt).
+
+verdict: SHIPPED

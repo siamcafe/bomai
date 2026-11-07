@@ -1,0 +1,263 @@
+[BOMAI] Grok Cursor Agent — v2.0.4 QC Street Test (Install + Hardcore Prompts + Image)
+
+TOOL: Grok Cursor Agent
+MODE: Cursor Agent
+MODEL: Grok 4.7 REASONING high
+PROJECT: bomai
+Do NOT rename the tab. Tab title = exactly as pasted.
+TAB TITLE: [OPS]: QC_Street_Test_v204_Hardcore [bomai]
+
+────────────────────────────────────────
+GOAL
+────────────────────────────────────────
+[bomai] Full QC street test of BOM AI v2.0.4 on a REAL Windows machine (i9).
+Download the PUBLISHED installer from GitHub/bomai.app, install fresh, then stress test with 30+ hardcore prompts + image attachment.
+This is the FINAL user-experience verification before declaring v2.0.4 production-ready.
+
+Output: one fenced ```yaml code block with ALL evidence.
+
+────────────────────────────────────────
+BACKGROUND
+────────────────────────────────────────
+BOM AI v2.0.4 shipped 7 Nov 2026. Reinstall/uninstall fix. QC by zcode passed 26/26 tests.
+But owner wants an INDEPENDENT verification by a different agent (Grok) as a second opinion.
+Test the REAL user journey: download → install → use → stress → image → uninstall → reinstall.
+
+────────────────────────────────────────
+SSH ACCESS
+────────────────────────────────────────
+i9: bomi9@192.168.1.20:22 (password: [REDACTED])
+SSH LOCK: Do NOT modify sshd_config or PasswordAuthentication.
+
+────────────────────────────────────────
+PART 1: FRESH INSTALL FROM PUBLISHED URL
+────────────────────────────────────────
+1.1 Download BAT from the LIVE published URL (not hub):
+    curl -sL "https://github.com/siamcafe/bomai/releases/download/v2.0.4/Install-BOM-AI-Online.bat" -o Install-BOM-AI-Online.bat
+    Verify SHA: certutil -hashfile Install-BOM-AI-Online.bat SHA256
+    Expected prefix: 58b21b88
+
+1.2 Check current state BEFORE install:
+    - Is there an existing BOM AI install? Check %LOCALAPPDATA%\BOMAI\state\install-root.txt
+    - Is Ollama running? tasklist /FI "IMAGENAME eq ollama.exe"
+    - What's on port 8080, 8888, 11434, 11435? netstat -ano | findstr "8080 8888 11434 11435"
+
+1.3 Run the installer in CONSOLE mode (for automation):
+    set BOMAI_QC=1
+    set BOMAI_ROOT_OVERRIDE=D:\BOMAI-QC-V204
+    Install-BOM-AI-Online.bat console
+    Record: exit code, install time, any errors
+
+1.4 Verify install success:
+    - install.json exists at D:\BOMAI-QC-V204\state\install.json
+    - Check: version=2.0.4, schema=2, status=COMPLETE
+    - curl http://127.0.0.1:8080 → HTTP 200 (Open WebUI)
+    - curl http://127.0.0.1:11434/api/version → Ollama version
+    - curl http://127.0.0.1:11435/api/version → Gateway version (if running)
+
+────────────────────────────────────────
+PART 2: BASIC PROMPT TEST (5 prompts)
+────────────────────────────────────────
+Test through the gateway/OWUI API. For each prompt:
+- Send via curl to http://127.0.0.1:8080/api/chat or http://127.0.0.1:11435/api/chat
+- Record: response text, response time, Han character count
+- Han count MUST be 0 for ALL prompts
+
+Prompts:
+P1: "สวัสดีครับ แนะนำตัวหน่อย คุณคือใคร?"
+P2: "อธิบายวิธีทำต้มยำกุ้ง แบบละเอียด"
+P3: "What is the capital of Thailand? Answer in Thai."
+P4: "ช่วยเขียนอีเมลถึงหัวหน้า ขอลาพักร้อน 3 วัน"
+P5: "แปลประโยคนี้เป็นภาษาอังกฤษ: วันนี้อากาศดีมาก อยากไปเที่ยวทะเล"
+
+────────────────────────────────────────
+PART 3: HARDCORE STRESS PROMPTS (15 prompts)
+────────────────────────────────────────
+These are designed to trigger edge cases: Han leak, safety refusal, translation traps, code mixing.
+
+P6: "อธิบาย blockchain เป็นภาษาไทยให้เด็ก 10 ขวบเข้าใจ"
+P7: "เปรียบเทียบข้อดีข้อเสียของ Bitcoin กับทองคำ"
+P8: "สอนวิธีเขียน Python สำหรับคนไม่เคยเขียนโค้ด ขอ 5 ตัวอย่างพร้อมคำอธิบาย"
+P9: "เล่านิทานไทยเรื่องพระอภัยมณี แบบย่อ"
+P10: "แปลประโยคนี้เป็นภาษาจีน: ประเทศไทยสวยงามมาก"
+    (THIS is the translation trap — model SHOULD output Chinese here, that is ALLOWED)
+    Han count > 0 is EXPECTED and CORRECT for this prompt only.
+P11: "แปลประโยคนี้เป็นภาษาญี่ปุ่น: ขอบคุณมากครับ"
+    (Japanese output expected — may contain kanji, count Han but mark as ALLOWED)
+P12: "วิเคราะห์ราคาทองคำวันนี้ ควรซื้อหรือขาย?"
+    (May trigger safety refusal — WARN is OK, FAIL only if Han leak)
+P13: "เขียนบทกวีภาษาไทย 4 บท เกี่ยวกับทะเล"
+P14: "อธิบายทฤษฎีสัมพัทธภาพของไอน์สไตน์ เป็นภาษาไทย"
+P15: "สรุปข่าวเศรษฐกิจไทยล่าสุด"
+    (May trigger search — check if SearXNG works)
+P16: "คุณรู้สึกอย่างไรเกี่ยวกับ AI? ตอบอย่างจริงใจ"
+    (Philosophical — should answer in Thai, no Han)
+P17: "ช่วยแก้โจทย์คณิตศาสตร์: 2x + 5 = 15, หา x"
+P18: "อธิบายระบบสุริยะ ดาวเคราะห์แต่ละดวง เป็นภาษาไทย"
+P19: "เขียน SQL query ดึงข้อมูลลูกค้าที่ซื้อสินค้ามากกว่า 5 ชิ้น"
+P20: "ทำไมฟ้าถึงเป็นสีฟ้า? อธิบายแบบวิทยาศาสตร์เป็นภาษาไทย"
+
+For each: record response (first 200 chars), response time, Han count.
+Mark: PASS (Han=0 for Thai answers) | ALLOWED (Han>0 for translation to Chinese/Japanese) | WARN (safety refusal but no Han) | FAIL (unexpected Han in Thai answer)
+
+────────────────────────────────────────
+PART 4: IMAGE ATTACHMENT TEST (5 tests)
+────────────────────────────────────────
+Test image understanding capability.
+
+4.1 Create a simple test image (or use any image on disk):
+    Find any image on i9: Get-ChildItem -Path C:\Users\bomi9 -Recurse -Include "*.png","*.jpg" -ErrorAction SilentlyContinue | Select-Object -First 5
+
+4.2 Send image + prompt via OWUI API:
+    For each image test, base64 encode the image and send with a Thai prompt.
+
+I1: [any chart/graph image] + "รูปนี้คืออะไร? อธิบายเป็นภาษาไทย"
+I2: [any photo] + "อธิบายสิ่งที่เห็นในรูปนี้เป็นภาษาไทย"
+I3: [any screenshot] + "นี่คือหน้าจออะไร? อธิบายเป็นภาษาไทย"
+I4: [any image] + "What do you see? Answer in Thai only."
+I5: [any image] + "วิเคราะห์รูปนี้ ให้คะแนน 1-10 แล้วอธิบาย"
+
+For each: record response (first 200 chars), Han count, whether model understood the image.
+Note: Light tier (Qwen 4.2B) may have limited image capability — WARN is OK if model declines image but answers in Thai.
+
+────────────────────────────────────────
+PART 5: REINSTALL TEST
+────────────────────────────────────────
+5.1 Run the installer AGAIN (same BAT, same root):
+    Install-BOM-AI-Online.bat console
+    Expected: reused_verified_existing, no re-download, chats preserved
+
+5.2 Verify everything still works:
+    curl http://127.0.0.1:8080 → HTTP 200
+    Send P1 again → Han=0
+
+────────────────────────────────────────
+PART 6: UNINSTALL TEST
+────────────────────────────────────────
+6.1 Run uninstall:
+    set BOMAI_REMOVE_DATA=1
+    Install-BOM-AI-Online.bat uninstall
+    Expected: all processes stopped, files removed
+
+6.2 Verify:
+    - Port 8080, 8888, 11435 → nothing listening
+    - D:\BOMAI-QC-V204 → should not exist or be empty
+    - Ollama → should still be running (we didn't remove it)
+
+6.3 Clean up QC install:
+    Remove D:\BOMAI-QC-V204 if anything remains
+
+────────────────────────────────────────
+PART 7: HAN COUNT ANALYSIS
+────────────────────────────────────────
+For EVERY response collected, run Han character detection:
+
+python3 -c "
+import unicodedata
+text = open('response.txt', encoding='utf-8').read()
+han = [c for c in text if 0x4E00 <= ord(c) <= 0x9FFF or 0x3400 <= ord(c) <= 0x4DBF or 0x20000 <= ord(c) <= 0x2FA1F or 0xF900 <= ord(c) <= 0xFAFF]
+print(f'han={len(han)} total={len(text)}')
+if han:
+    for c in han[:10]:
+        print(f'  U+{ord(c):04X} {unicodedata.name(c, \"?\")}')
+"
+
+Categorize results:
+- Thai answer with Han=0 → PASS
+- Translation to Chinese/Japanese with Han>0 → ALLOWED (expected)
+- Safety refusal with Han=0 → WARN (acceptable)
+- Thai answer with Han>0 → FAIL (Han leak — critical bug)
+
+────────────────────────────────────────
+DECISION TABLE
+────────────────────────────────────────
+- If install fails → report error, do NOT retry with different settings
+- If Ollama already has bomai-safe → reuse, do not recreate
+- If OWUI port 8080 not QC port (18080) → use whatever port the QC install binds
+- If image test model declines → WARN not FAIL (Light tier limitation)
+- If P10/P11 translation outputs Han → ALLOWED (correct behavior)
+- If any Thai answer has Han > 0 → FAIL CRITICAL
+- If SSH fails → retry once, then BLOCKED
+
+────────────────────────────────────────
+FORBIDDEN
+────────────────────────────────────────
+- Do NOT modify any installer file — test as-is from published URL
+- Do NOT touch the production install (if any exists at %LOCALAPPDATA%\BOMAI)
+- Do NOT touch C1 (109.205.176.7) — NEVER TOUCH
+- Do NOT touch sshd_config — SSH LOCK
+- Do NOT modify GOD CONFIG or bom_runtime.py
+- SCOPE LOCK: BOMAI project, QC test only
+- TAB LOCK: Do NOT rename the tab
+
+────────────────────────────────────────
+OUTPUT FORMAT
+────────────────────────────────────────
+Reply with exactly one fenced ```yaml code block:
+
+```yaml
+project: bomai
+survey: qc_street_test_v204_hardcore
+date: 2026-11-07
+verdict: PASS | FAIL | MIXED
+
+part1_install:
+  download_sha_match: true|false
+  install_success: true|false
+  version: "2.0.4"
+  schema: 2
+  owui_http: <code>
+  ollama_version: "..."
+  install_time_seconds: <N>
+
+part2_basic_prompts:
+  P1: {han: 0, time_s: <N>, preview: "...", status: PASS}
+  P2: {han: 0, time_s: <N>, preview: "...", status: PASS}
+  P3: {han: 0, time_s: <N>, preview: "...", status: PASS}
+  P4: {han: 0, time_s: <N>, preview: "...", status: PASS}
+  P5: {han: 0, time_s: <N>, preview: "...", status: PASS}
+
+part3_hardcore_prompts:
+  P6: {han: 0, time_s: <N>, preview: "...", status: PASS}
+  P7: {han: 0, time_s: <N>, preview: "...", status: PASS}
+  P8: {han: 0, time_s: <N>, preview: "...", status: PASS}
+  P9: {han: 0, time_s: <N>, preview: "...", status: PASS}
+  P10: {han: <N>, time_s: <N>, preview: "...", status: ALLOWED}
+  P11: {han: <N>, time_s: <N>, preview: "...", status: ALLOWED}
+  P12: {han: 0, time_s: <N>, preview: "...", status: PASS|WARN}
+  P13: {han: 0, time_s: <N>, preview: "...", status: PASS}
+  P14: {han: 0, time_s: <N>, preview: "...", status: PASS}
+  P15: {han: 0, time_s: <N>, preview: "...", status: PASS}
+  P16: {han: 0, time_s: <N>, preview: "...", status: PASS}
+  P17: {han: 0, time_s: <N>, preview: "...", status: PASS}
+  P18: {han: 0, time_s: <N>, preview: "...", status: PASS}
+  P19: {han: 0, time_s: <N>, preview: "...", status: PASS}
+  P20: {han: 0, time_s: <N>, preview: "...", status: PASS}
+
+part4_image_tests:
+  I1: {han: 0, understood_image: true|false, preview: "...", status: PASS|WARN}
+  I2: {han: 0, understood_image: true|false, preview: "...", status: PASS|WARN}
+  I3: {han: 0, understood_image: true|false, preview: "...", status: PASS|WARN}
+  I4: {han: 0, understood_image: true|false, preview: "...", status: PASS|WARN}
+  I5: {han: 0, understood_image: true|false, preview: "...", status: PASS|WARN}
+
+part5_reinstall:
+  reused_existing: true|false
+  still_works: true|false
+  han_recheck: 0
+
+part6_uninstall:
+  processes_stopped: true|false
+  files_removed: true|false
+  ollama_still_running: true|false
+
+part7_han_summary:
+  total_prompts: 25
+  pass: <N>
+  allowed: <N>
+  warn: <N>
+  fail: <N>
+  han_leak_detected: false
+
+verdict: PASS | FAIL
+```

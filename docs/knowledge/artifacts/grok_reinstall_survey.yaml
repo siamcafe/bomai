@@ -1,0 +1,247 @@
+[BOMAI] Grok Cursor Agent — Reinstall + Uninstall QC Street Test
+
+TOOL: Grok Cursor Agent
+MODE: Cursor Agent
+MODEL: Grok 4.7 REASONING high
+PROJECT: bomai
+Do NOT rename the tab. Tab title = exactly as pasted.
+TAB TITLE: [OPS]: QC_Reinstall_Uninstall_Street_Test [bomai]
+
+────────────────────────────────────────
+GOAL
+────────────────────────────────────────
+[bomai] Survey and QC street test the Windows installer (Install-BOM-AI-Online.bat v2.0.3) for TWO critical user scenarios that have NO solution today:
+
+A) REINSTALL / UPGRADE — user already has BOM AI installed, runs the BAT again. What happens? Does it break? Does it preserve config/models/chat history?
+B) UNINSTALL — user wants to remove BOM AI completely. There is NO uninstaller. What must they manually delete?
+
+This is READ-ONLY survey + analysis. Do NOT create any fix. Output: one fenced ```yaml block with full findings.
+
+────────────────────────────────────────
+BACKGROUND
+────────────────────────────────────────
+BOM AI v2.0.3 is a free local AI installer for Thai users. It installs:
+- Ollama (LLM runtime)
+- Open WebUI (chat interface, Python venv)
+- SearXNG (web search, optional)
+- bom_runtime.py gateway
+- bomai-safe model (custom Modelfile with GOD CONFIG v9.1)
+
+The installer is a single .bat file (~406KB) that downloads and sets up everything.
+Architecture: NO docker, NO MSI, NO registry entries — pure portable-style install.
+GitHub: github.com/siamcafe/bomai (PUBLIC)
+
+The .bat is available at:
+https://github.com/siamcafe/bomai/releases/download/v2.0.3/Install-BOM-AI-Online.bat
+
+────────────────────────────────────────
+SSH ACCESS (for reading the BAT source)
+────────────────────────────────────────
+i9: bomi9@192.168.1.20:22 (password: [REDACTED])
+The BAT may be at E:\BOMAI\ or downloadable from GitHub.
+Alternatively, curl the GitHub release directly.
+
+SSH LOCK: Do NOT modify sshd_config or PasswordAuthentication on any machine.
+
+────────────────────────────────────────
+SCOPE LOCK
+────────────────────────────────────────
+READ-ONLY survey + analysis. Do NOT install, uninstall, modify, or run anything.
+Do NOT touch C1 (109.205.176.7) under any circumstance.
+This survey is about the WINDOWS installer only. macOS and Linux are separate scope.
+
+────────────────────────────────────────
+SURVEY PARTS (4 parts)
+────────────────────────────────────────
+
+## PART 1: READ THE BAT SOURCE — grep every path, every action
+
+1.1 Get the BAT file:
+    curl -sL "https://github.com/siamcafe/bomai/releases/download/v2.0.3/Install-BOM-AI-Online.bat" -o /tmp/bomai_bat.txt
+    OR: SSH i9, find the BAT: Get-ChildItem -Path E:\BOMAI -Recurse -Filter "*.bat" | Select-Object FullName,Length
+
+1.2 Read the ENTIRE BAT and document:
+    a) Every directory it creates (mkdir, md)
+    b) Every file it downloads (curl, Invoke-WebRequest, bitsadmin)
+    c) Every file it writes/copies/moves
+    d) Every registry key it touches (if any)
+    e) Every environment variable it sets (setx, set)
+    f) Every scheduled task or service it creates
+    g) Every shortcut it creates (desktop, start menu)
+    h) Every process it starts (ollama serve, python, etc.)
+    i) Every port it opens/binds
+    j) The install directory — where is the root? (AppData? D:\BOMAI? user-chosen?)
+
+1.3 Map the FULL file tree after install:
+    Based on the BAT logic, list every file and folder that would exist after a clean install.
+    Mark each as: CONFIG (user data), MODEL (large, downloaded), BINARY (program files), TEMP (can delete)
+
+## PART 2: REINSTALL SCENARIO ANALYSIS
+
+Read the BAT code and answer these questions with evidence (line numbers or code snippets):
+
+2.1 What happens if the user runs the BAT when BOM AI is already installed?
+    - Does it check for existing install? (grep for "if exist", "test -d", directory checks)
+    - Does it skip download if files already exist?
+    - Does it overwrite config files? (god.env, config_g, models.json)
+    - Does it overwrite the model? (ollama create vs ollama pull — does it re-pull?)
+    - Does it kill existing processes first? (taskkill, Stop-Process)
+    - Does it backup anything before overwriting?
+
+2.2 Specific collision scenarios:
+    a) Ollama already running on :11434 → BAT tries to start another instance → port conflict?
+    b) Open WebUI venv already exists → BAT creates new venv or reuses?
+    c) bomai-safe model already exists → ollama create overwrites or skips?
+    d) User has chat history in Open WebUI → preserved or lost?
+    e) User changed settings in Open WebUI → preserved or lost?
+    f) User downloaded additional models → preserved or removed?
+    g) bom_runtime.py already running → conflict?
+
+2.3 Rate each scenario: SAFE (no problem) / BROKEN (data loss or error) / UNKNOWN (need testing)
+
+## PART 3: UNINSTALL SCENARIO ANALYSIS
+
+3.1 List EVERYTHING that must be removed for a clean uninstall:
+    a) Install directory and all contents (path from Part 1)
+    b) Ollama — where is it installed? Models directory? Config?
+       - Default: C:\Users\<user>\AppData\Local\Programs\Ollama\
+       - Models: C:\Users\<user>\.ollama\models\ (or OLLAMA_MODELS env var)
+       - Config: C:\Users\<user>\.ollama\
+    c) Open WebUI — venv directory, data directory, webui.db
+    d) Python — did the BAT install Python or use existing?
+    e) Environment variables set by the BAT (OLLAMA_HOST, OLLAMA_MODELS, etc.)
+    f) Scheduled tasks (if any)
+    g) Desktop shortcuts (if any)
+    h) Start menu entries (if any)
+    i) Registry keys (if any)
+    j) Firewall rules (if any)
+    k) Temp files in %TEMP%
+    l) Log files
+
+3.2 For each item, note:
+    - Exact path or registry key
+    - Size (approximate: small config vs multi-GB models)
+    - Risk if left behind (harmless vs takes disk space vs security risk)
+    - Can the user find it easily? (obvious path vs hidden AppData)
+
+3.3 Estimate total disk footprint:
+    - Ollama binary: ~X MB
+    - Models (Light tier Qwen 4.2B Q4_K_M): ~X GB
+    - Open WebUI + venv: ~X MB
+    - bom_runtime.py + gateway: ~X MB
+    - Total: ~X GB
+
+## PART 4: USER JOURNEY QC (mental walkthrough, no execution)
+
+4.1 Scenario A — Fresh install user, happy, wants to upgrade to v2.0.4 later:
+    - What should they do? Run new BAT?
+    - What will break?
+    - What will they lose?
+
+4.2 Scenario B — User installed, doesn't like it, wants to remove everything:
+    - What do they need to delete?
+    - Will they know what to delete?
+    - Will they miss anything? (hidden folders, env vars)
+    - How much disk space will they recover?
+
+4.3 Scenario C — User installed on D:\, runs BAT again from different location:
+    - Does the BAT remember the old install path?
+    - Will it create a second copy?
+
+4.4 Scenario D — User has Ollama already installed (for other models):
+    - Does the BAT conflict with existing Ollama?
+    - Does it change their OLLAMA_HOST/OLLAMA_MODELS?
+    - Does it affect their other models?
+
+4.5 For each scenario, rate:
+    - User experience: GOOD / CONFUSING / BROKEN
+    - Data safety: SAFE / RISK / LOSS
+    - Recommendation: what SHOULD happen (for future fix)
+
+────────────────────────────────────────
+DECISION TABLE
+────────────────────────────────────────
+- If BAT not downloadable from GitHub → SSH i9 to find it
+- If BAT is obfuscated or too complex to read → report what you CAN determine
+- If any scenario is UNKNOWN → say so honestly, do not guess
+- This is analysis only — do NOT propose code fixes (that comes later from K3)
+
+────────────────────────────────────────
+FORBIDDEN
+────────────────────────────────────────
+- Do NOT run the BAT or any installer
+- Do NOT install, uninstall, or modify anything on any machine
+- Do NOT touch C1 (109.205.176.7)
+- Do NOT touch sshd_config or PasswordAuthentication — SSH LOCK
+- Do NOT propose fixes (report only — K3 will design the fix)
+- SCOPE LOCK: BOMAI project only, Windows installer only
+- TAB LOCK: Do NOT rename the tab
+
+────────────────────────────────────────
+OUTPUT FORMAT
+────────────────────────────────────────
+Reply with exactly one fenced ```yaml code block:
+
+```yaml
+project: bomai
+survey: reinstall_uninstall_qc
+date: 2026-11-07
+verdict: <overall user experience rating>
+
+part1_bat_anatomy:
+  install_root: "..."
+  directories_created: [...]
+  files_downloaded: [...]
+  env_vars_set: [...]
+  services_created: [...]
+  shortcuts_created: [...]
+  registry_keys: [...]
+  ports_used: [...]
+  total_file_tree:
+    - path: "..."
+      type: CONFIG|MODEL|BINARY|TEMP
+      size_approx: "..."
+
+part2_reinstall:
+  checks_existing_install: true|false
+  evidence: "..."
+  scenarios:
+    ollama_port_conflict: {rating: SAFE|BROKEN|UNKNOWN, evidence: "..."}
+    venv_collision: {rating: SAFE|BROKEN|UNKNOWN, evidence: "..."}
+    model_overwrite: {rating: SAFE|BROKEN|UNKNOWN, evidence: "..."}
+    chat_history: {rating: SAFE|BROKEN|UNKNOWN, evidence: "..."}
+    user_settings: {rating: SAFE|BROKEN|UNKNOWN, evidence: "..."}
+    extra_models: {rating: SAFE|BROKEN|UNKNOWN, evidence: "..."}
+    gateway_conflict: {rating: SAFE|BROKEN|UNKNOWN, evidence: "..."}
+
+part3_uninstall:
+  items_to_remove:
+    - path: "..."
+      size: "..."
+      risk_if_left: "..."
+      user_findable: true|false
+  total_disk_footprint: "..."
+  env_vars_to_clear: [...]
+  hidden_leftovers: [...]
+
+part4_user_journey:
+  scenario_a_upgrade:
+    experience: GOOD|CONFUSING|BROKEN
+    data_safety: SAFE|RISK|LOSS
+    recommendation: "..."
+  scenario_b_uninstall:
+    experience: GOOD|CONFUSING|BROKEN
+    data_safety: SAFE|RISK|LOSS
+    recommendation: "..."
+  scenario_c_different_path:
+    experience: GOOD|CONFUSING|BROKEN
+    data_safety: SAFE|RISK|LOSS
+    recommendation: "..."
+  scenario_d_existing_ollama:
+    experience: GOOD|CONFUSING|BROKEN
+    data_safety: SAFE|RISK|LOSS
+    recommendation: "..."
+
+critical_issues: [...]
+recommendations_for_k3: [...]
+```

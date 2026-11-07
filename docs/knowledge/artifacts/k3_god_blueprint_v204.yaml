@@ -1,0 +1,962 @@
+project: bomai
+document: GOD BLUEPRINT v2.0.4 — reinstall/uninstall fix, all 3 OS
+author: K3 (Kimi /auto, K3-256k THINKING)
+date: 2026-11-07
+status: READY_FOR_ZCODE
+implements_requirements:
+  - "1. ติดตั้งซ้ำจะต้องไม่มีปัญหา (reinstall must be problem-free)"
+  - "1.1 สามารถ uninstall หรือ replace ติดตั้งซ้ำได้ (uninstall or replace must work)"
+  - "1.2 process ค้างต้องแจ้งเตือน user และ auto kill (stuck process: warn user + auto kill)"
+  - "1.3 ทำได้ทั้งติดตั้งและถอนระบบ bomai ทุก OS (install + uninstall on every OS)"
+  - "2. QC street test ตอนจบ (street QC at the end)"
+  - "3. ship ทดสอบให้ครบทุก OS (ship-tested on all OS)"
+sources:
+  - art#57343 (Grok survey task spec + 10 issues)
+  - art#57357 (Claude preliminary blueprint — improved and extended here)
+  - Install-BOM-AI-Online.bat v2.0.3 (2338 lines, read in full; line numbers cited below are this file)
+  - install-bom-ai-linux.sh v2.0.3 (bootstrap; payload extracted and read in full)
+  - install-bom-ai-mac.command v2.0.3 (bootstrap; payload byte-identical to linux payload)
+  - payload sources read in full: install_unix.py (486 lines), seed_owui.py (395), audit_owui.py (157), bom_runtime.py expected-version gate (2528-2566)
+  - docs: docs.ollama.com/faq (model store paths), docs.ollama.com/windows, Inno Setup unins000.exe flags, launchctl(1), lsof(1), fuser(1), ss(8)
+forbidden_respected:
+  - "GOD CONFIG v9.1 / bom_runtime.py / Han Fix: NOT modified by this plan. Only installer-side config values (runtime.json expected_version) and installer code change."
+  - "No server touched; blueprint + how-to only; zcode implements."
+audience: zcode GLM-5.3 (implementer) — every fix below has exact code; do not improvise outside these specs without owner sign-off.
+
+# ════════════════════════════════════════════════════════════════════════════
+# SECTION 1: ARCHITECTURE
+# ════════════════════════════════════════════════════════════════════════════
+section_1_architecture:
+
+  state_machine:
+    entry_modes:
+      install:    "default; WPF GUI wizard (Thai/English toggle)"
+      console:    "same engine, ASCII progress; opts via env (BOMAI_TIER, BOMAI_ROOT_OVERRIDE, BOMAI_INSTALL_TAILSCALE)"
+      update:     "read-only release check; prints active release dir; exits"
+      uninstall:  "CLI path; env BOMAI_REMOVE_DATA=1 / BOMAI_REMOVE_MODELS=1 opt-ins; v2.0.4 adds BOMAI_REMOVE_OLLAMA=1"
+      validatepath: "support/QC; checks BOMAI_VALIDATE_PATH as install root; RC 0/20"
+    gui_pages: "welcome → location → components → progress → (done | error); already-installed page (installed) → update/repair | uninstall | exit; uninstall confirm page (uninstall) → progress → undone"
+    engine_steps: "S1 preflight → S2 prepare → S3/S4 ollama reuse-or-install+serve → S5 downloads+SHA → S6 python (msiexec /a admin image) → S7 pip venvs (owui, searxng) + HF-1 layers → S8 gateway(11435)+OWUI(8080) first boot → S8b stop OWUI + seed webui.db + restart → S9 model pull + manifest/blob SHA pin + ollama create alias → S10 searxng(8888) → S11 launcher+shortcuts → ST tailscale(optional) → S12 health + commit (active-release.txt, status=COMPLETE)"
+    resume_logic: |
+      resumeKey = SHA256(release | canonical_root | tier | depLockSha). Recorded in install.json at S2.
+      Same key + status=COMPLETE + rel dir exists  → S0 VERIFY-ONLY fast path: restart stopped services,
+        verify model alias, RC=0, emits reused=reused_verified_existing. (BAT 662-725)
+      Same key + status != COMPLETE → resume into the SAME uncommitted release dir. (BAT 726-730)
+      Key mismatch (new release / root / tier / deps) → fresh release dir releases/<release>/b<ts>;
+        old owned processes stopped first (BAT 731-744 — currently broken for OWUI/SearXNG, see FIX-01).
+    unix_flow: "bootstrap sh/command guarantees python 3.11/3.12 (system → uv fallback, SHA-pinned) → extracts embedded zip → install_unix.py: stop owned svcs → copy payload → first-login.json → install_ollama → model_setup (pull+create alias) → venvs → HF-1 → searxng → frontend patch → runtime.json → start_services → stop owui → seed_owui.py → start_services → verify() → create_launcher. Modes: --start / --stop / --serve-owui / --serve-searxng / --qc. NO --uninstall today (v2.0.4 adds it)."
+
+  file_layout:
+    windows:
+      install_root_default: "%LOCALAPPDATA%\\BOMAI  (user-changeable on location page; bare drive D:\\ normalizes to D:\\BOMAI)"
+      root_pointer: "%LOCALAPPDATA%\\BOMAI\\state\\install-root.txt (always at DEFAULT location; lets update/uninstall find a moved root; read only for update/uninstall in v2.0.3 — FIX-08 extends to console/install)"
+      tree: |
+        <root>\
+          releases\<release>\<buildID>\   BINARY  python\ venvs\owui venvs\searxng searxng-src\ searxng\settings.yml
+                                                 bom_runtime.py  config\models.json  bomai_han_policy.py bomai_owui_boundary.py
+                                                 bomai_owui_han_guard.py install_hf1.py  Modelfile.<alias>
+                                                 start-owui.ps1 start-searxng.ps1 Start-BOM-AI.ps1
+          data\open-webui\               CONFIG(USER)  webui.db + wal/shm, uploads\, static\, .webui_secret_key, webui.db.before-bomai-*.bak
+          cache\sha256\                  TEMP(verified cache, re-downloadable)  OllamaSetup, searxng zip, python msis, payload copies, favicon
+          logs\                          TEMP  install-<rel>.log, *-out/-err.log, gateway.jsonl, configuration-verification.json
+          state\                         CONFIG(SYSTEM)  install.json runtime.json first-login.json(ACL-locked) active-release.txt
+                                                        ollama.pid gateway.pid owui.pid searxng.pid
+      external_artifacts:
+        - "%LOCALAPPDATA%\\Programs\\Ollama\\ (Ollama app, Inno installer; unins000.exe) — SHARED RUNTIME"
+        - "model store: $env:OLLAMA_MODELS else %USERPROFILE%\\.ollama\\models (per docs.ollama.com/faq) — SHARED"
+        - "Desktop\\BOM AI.lnk ; %APPDATA%..\\Start Menu\\Programs\\BOM AI\\BOM AI.lnk ; Startup\\BOM AI.lnk (shortcut creation: BAT 1447-1469)"
+        - "registry: HKCU\\Software\\Python\\PythonCore\\3.11 ghost only from pre-2.0.1 bundles (uninstall cleans if it points under root; BAT 1683-1703). v2.0.3+ writes NO registry."
+        - "Tailscale MSI (opt-in, system-wide) — never removed by BOM AI uninstall"
+    macos:
+      install_root_default: "~/BOM-AI (override: --root / BOMAI_ROOT)"
+      tree: |
+        <root>/ runtime/ (payload .py ×9, bom_runtime.py, models.json)  BINARY
+                .venv/ .venv-searxng/ .venv-tools/                       BINARY
+                searxng-<rev>/ searxng-settings.yml                      BINARY+CONFIG
+                frontend/ (patched copy)                                 BINARY
+                ollama/ (tgz-extracted ollama, ONLY if we installed it)  BINARY(ours)
+                cache/ (searxng.zip, ollama tgz, favicon.png, ollama.tar) TEMP
+                data/ (webui.db, uploads, .webui_secret_key)             CONFIG(USER)
+                logs/ state/ (first-login.json, *.pid, install-verification.json, model-verification.json)
+                runtime.json (top level)                                 CONFIG(SYSTEM)
+                Modelfile.<tier>                                         CONFIG(SYSTEM)
+                Start-BOM-AI.command                                     BINARY(launcher)
+      external_artifacts:
+        - "~/Desktop/BOM AI.command (copy of launcher)"
+        - "~/Library/LaunchAgents/app.bomai.local.plist (RunAtLoad login agent)"
+        - "system ollama (brew /opt/homebrew/bin/ollama or Ollama.app) if user had it — never ours"
+        - "model store ~/.ollama/models — SHARED"
+    linux:
+      install_root_default: "~/BOM-AI (override: --root / BOMAI_ROOT)"
+      tree: "identical to macOS except launcher = start-bom-ai.sh"
+      external_artifacts:
+        - "~/.local/share/applications/bomai.desktop"
+        - "~/.config/autostart/bomai.desktop"
+        - "model store: $OLLAMA_MODELS else ~/.ollama/models (or /usr/share/ollama/.ollama/models for a systemd-service install we never create) — SHARED"
+
+  install_json_schema:
+    path: "<root>\\state\\install.json (Windows) ; unix keeps equivalent state in <root>/runtime.json + state/*; v2.0.4 unix ALSO writes state/install.json for parity (see Section 5)"
+    existing_fields_v203: "release, build, updated, ended, status (COMPLETE|FAILED|CANCELLED), code, msg, rel, root, resumeKey, tier, dataDir, alias, tierTag, modelLayer, python, ollamaExe, ollamaReused, owuiOnline, seeded, s1..s12, s10, sTailscale, ports{p8080,p11434,p8888}, lastVerify"
+    new_fields_v204:
+      version:           "display version string, e.g. '2.0.4' — written at S2 and S12 (FIX-10)"
+      ollama_installed_by_bomai: "true|false — true only when the OllamaSetup.exe / tgz download path ran (S3 fresh install / install_unix install_ollama download branch). Written at S3. Drives FIX-02."
+      ollama_version_accepted:   "the exact version string accepted at install (e.g. '0.40.13'). Written at S3/S4. Drives FIX-06 and runtime.json expected_version."
+      shortcut_paths:    "array of absolute .lnk paths actually created at S11 (Windows) / .command,.plist,.desktop paths (unix runtime.json created_paths). Drives FIX-09."
+      force_reseed:      "true|false (absent=false). When true, seed_owui.py --force-reseed restores v2.0.3 overwrite-all behavior. Reserved for future breaking config changes (FIX-05)."
+      schema:            "2 — bump marker so future installers can detect v2.0.4 state files."
+
+  process_ownership_model:
+    ports:
+      11434: "Ollama serve — SHARED, may pre-exist; owned-by-us only if install.json ollama_installed_by_bomai=true (win) or <root>/ollama exists (unix)"
+      11435: "bom_runtime.py gateway — always ours; exe = <rel>/python/python.exe (win) / <root>/.venv/bin/python (unix)"
+      8080:  "Open WebUI — always ours; LISTENER exe = <rel>/venvs/owui/Scripts/open-webui.exe (win) / <root>/.venv/bin/python -m install_unix --serve-owui (unix)"
+      8888:  "SearXNG via waitress — ours when component selected; LISTENER exe = venvs/searxng python (win) / .venv-searxng python (unix)"
+    windows_process_chains: |
+      gateway:  installer → python.exe(bom_runtime.py)         [pid file = python pid — ExecutablePath under root: ownership OK]
+      owui:     installer → powershell.exe(-File start-owui.ps1) → open-webui.exe serve   [pid file = WRAPPER powershell pid (BAT 1170,1201); LISTENER is the child — ExecutablePath under root]
+      searxng:  installer → powershell.exe(-File start-searxng.ps1) → python.exe -m waitress [pid file = WRAPPER powershell pid (BAT 1401); LISTENER is the child]
+      ollama:   installer → ollama.exe serve  (binary under %LOCALAPPDATA%\Programs\Ollama — NEVER under root; pid file ollama.pid BAT 840)
+      Ownership test (canonical, use everywhere): owned ⟺ ExecutablePath starts with <root> OR CommandLine contains <root> path.
+      The wrapper powershell.exe fails ExecutablePath (System32) — that is the FIX-01 root cause; port-owner-first logic solves it.
+    unix_process_chains: "spawn() (install_unix.py 123-132) starts each service with start_new_session, pid file per service; cmdline always contains <root> (argv: <root>/runtime/install_unix.py --root <root> ...) → ps/lsof cmdline match is reliable."
+    identification_precedence: "1) port owner (Get-NetTCPConnection / lsof) + ownership test  →  2) cmdline sweep for <root> among known image names  →  3) pid files as legacy hint only. Never kill by pid file alone. Never kill a foreign listener."
+
+  data_preservation_model:
+    user_data_never_delete_without_optin:
+      - "<root>/data (webui.db chats+settings, uploads, .webui_secret_key)"
+      - "<root>/state/first-login.json"
+      - "Ollama model store + ALL models in it (bomai and non-bomai)"
+      - "user's other Ollama install, Tailscale, user-installed Python"
+    system_replaceable_on_reinstall:
+      - "releases/<rel>/<build>/ entire tree (python, venvs, searxng-src, gateway, start scripts, Modelfile)"
+      - "cache/ (verified downloads; re-fetchable)"
+      - "logs/"
+      - "state/runtime.json (regenerated; gateway_key MUST be carried over), state/*.pid, active-release.txt"
+      - "shortcuts (re-created, pointing at new release)"
+      - "OWUI db FORCE-class config keys only (see FIX-05 classification); user settings/per-user prefs preserved"
+    optin_removable_on_uninstall:
+      - "data/ (checkbox/env)"
+      - "bomai model aliases bomai-safe/bomai-pro + :pre2-legacy variants (checkbox/env)"
+      - "Ollama app itself — ONLY if we installed it AND no foreign models remain (new v2.0.4 opt-in)"
+
+# ════════════════════════════════════════════════════════════════════════════
+# SECTION 2: FIX SPECIFICATIONS (10 issues)
+# Line numbers: BAT = Install-BOM-AI-Online.bat v2.0.3 ; UNIX = install_unix.py ; SEED = seed_owui.py
+# ════════════════════════════════════════════════════════════════════════════
+section_2_fix_specifications:
+
+  - id: FIX-01
+    title: "Uninstall/replace cannot stop OWUI+SearXNG — pid files point at the powershell.exe wrapper"
+    severity: HIGH
+    root_cause: |
+      owui.pid / searxng.pid store the WRAPPER powershell.exe pid (BAT 1170, 1201, 1401).
+      The uninstall ownership test requires ExecutablePath to start with <root> (BAT 1643);
+      powershell.exe lives in System32 → test fails → services keep running → release dir
+      deletion is partially locked and ports 8080/8888 stay bound after 'uninstall'.
+      Same flaw in the fresh-dir reinstall stop block (BAT 731-744).
+      SECOND BUG (same area): mutex name mismatch — engine S2 takes 'Local\BOM-AI-Installer-2.0.0'
+      (hardcoded, BAT 775) while uninstall and the S0 fast path take 'Local\BOM-AI-Installer-2.0.3'
+      (BAT 1622, 668) → an uninstall can run CONCURRENTLY with an in-flight install.
+    fix_design: |
+      1. New shared helper Stop-BomaiOwnedProcesses (full code in Section 3): port-owner-first,
+         ownership-verified (ExecutablePath OR CommandLine under root), wrapper-aware
+         (kill listener, then wrapper if still alive), cmdline orphan sweep, pid files as hint.
+      2. Uninstall calls it FIRST (step 0) before any file deletion; verify ports 8080/8888/11435
+         free before proceeding; foreign listeners are reported and ABORT the uninstall
+         (partial uninstall is worse than none).
+      3. Fresh-dir reinstall path (BAT 731-744) calls the same helper instead of its own loop.
+      4. Unify mutex: single constant 'Local\BOM-AI-Installer' (no version suffix) in all 3 sites
+         → install/uninstall/reinstall mutually exclude across versions, forever.
+      5. User-visible warning (owner req 1.2): every auto-killed process is logged AND shown
+         (GUI progress page log box / console Write-Host): "หยุด process ที่ค้าง: <name> pid <n>".
+    windows_implementation: |
+      In $UninstallDef, replace the pid-file loop (BAT 1634-1654) with:
+          Emit 'step' @{ name='uninstall: stop processes'; pct=8 }
+          $stopRes = Stop-BomaiOwnedProcesses -Root $BOMAI_ROOT -ManagedPorts @(11435,8080,8888)
+          foreach ($s in $stopRes.stopped) { Write-Log ('auto-stopped: ' + $s); $removed += ('process ' + $s) }
+          foreach ($f in $stopRes.foreign) { Write-Log ('FOREIGN listener kept: ' + $f); $kept += ('foreign ' + $f) }
+          if ($stopRes.foreign.Count -gt 0) {
+            Emit 'err'  @{ code='E-PORT'; msg=('ports busy by non-BOM-AI processes: ' + ($stopRes.foreign -join ', ') + ' - close them and retry') }
+            Emit 'done' @{ ok=$false; code='E-PORT'; uninstalled=$true }
+            return
+          }
+      (Stop-BomaiOwnedProcesses must be defined INSIDE $UninstallDef and inside $EngineDef —
+      runspace isolation: outer functions are invisible in workers, cf. FIX 20261103 comment BAT 367-370.)
+      Replace the fresh-dir stop block (BAT 733-744) with:
+          $null = Stop-BomaiOwnedProcesses -Root $BOMAI_ROOT_ -ManagedPorts @(11435,8080,8888)
+      Mutex: BAT 775, 668, 1622 → all become:
+          New-Object System.Threading.Mutex($false, 'Local\BOM-AI-Installer')
+    macos_implementation: |
+      install_unix.py: rewrite stop() (UNIX 109-121) → port-owner fallback (full code Section 3):
+      pid file hit → verify cmdline contains root → SIGTERM → wait 20s → SIGKILL.
+      pid file stale/missing but port busy → lsof/fuser owner lookup → same ownership test → kill if ours, raise if foreign.
+    linux_implementation: "identical to macOS (same install_unix.py); fuser fallback covers lsof-less minimal installs."
+    regression_test: |
+      W-R1: install → verify running → uninstall (defaults) → after 'undone' page: Get-NetTCPConnection shows
+            8080/8888/11435 free; <root>/releases gone; data/ kept.
+      W-R2: install → kill the open-webui child ONLY (simulates stuck wrapper) → uninstall → wrapper + port freed.
+      U-R1: install → ./start-bom-ai.sh --stop && rm state/*.pid (stale state) → --uninstall → ports freed, no
+            'Port occupied by unowned service' error.
+      MUTEX: start console install, attempt uninstall in second window → second gets E-MUTEX immediately.
+    edge_cases: |
+      - PID reuse between pid write and uninstall → ownership test (path match) guards; never kill on pid alone.
+      - User renamed/moved root by hand → cmdline sweep fails to match → ports show foreign → uninstall aborts with
+        E-PORT and lists pids; user closes apps manually. Acceptable: no silent foreign kill, ever.
+      - OWUI mid-request when killed: SIGTERM/Stop-Process is fine; sqlite WAL in data/ survives (we keep data/ by default).
+      - QC mode (BOMAI_QC=1) uses ports 18080/18888/11436 → helper takes ManagedPorts param; QC path passes QC ports.
+
+  - id: FIX-02
+    title: "Uninstall cannot remove Ollama or model blobs"
+    severity: HIGH
+    root_cause: |
+      Uninstall step 8 (BAT 1712-1735) only runs 'ollama rm bomai-safe/bomai-pro', only when the server is
+      already up, and never touches the Ollama app. No tracking exists of who installed Ollama.
+      unix: no uninstall at all → nothing removes <root>/ollama either.
+    fix_design: |
+      1. Track ownership at install: install.json ollama_installed_by_bomai=true when S3 ran OllamaSetup
+         (BAT 818-830 sets it; reuse branches set false). unix: ollama ours ⟺ <root>/ollama dir exists
+         (install_ollama download branch, UNIX 252-268) → persist cfg['ollama_installed_by_bomai']=True.
+      2. New opt-in (GUI checkbox ChkUnOllama, default OFF; console env BOMAI_REMOVE_OLLAMA=1;
+         unix flag --remove-ollama): 'Remove Ollama (installed by BOM AI)'.
+      3. Execution order when opted in: (a) ensure server up (start temporarily if we own the binary,
+         remember to stop after), (b) ollama rm bomai-safe, bomai-pro, bomai-safe:pre2-legacy,
+         bomai-pro:pre2-legacy — ignore errors per alias, (c) GET /api/tags → if ANY non-bomai model
+         remains → keep Ollama, report 'other models found, Ollama kept', (d) else remove app:
+         Windows: & "$env:LOCALAPPDATA\Programs\Ollama\unins000.exe" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
+         (Inno flags — same family the installer itself uses at BAT 823), then stop our ollama serve first
+         (port 11434 owner = our binary path); macOS/Linux: stop owned serve + delete <root>/ollama tree.
+         NEVER brew uninstall / never touch /usr/local/bin/ollama — a system Ollama is not provably ours.
+      4. Blob cleanup: ollama rm already deletes blobs unreferenced by remaining manifests (server-side GC
+         on delete). After step (d), if the models dir is empty → remove it; if non-empty (foreign models)
+         → keep and report. Never hand-delete blobs: manifest/blob consistency is Ollama's job.
+      5. Model store path resolution: use the shared resolver from FIX-03 (not a hardcoded path).
+    windows_implementation: |
+      GUI (XAML after ChkUnModels, ~BAT 1897):
+        <CheckBox x:Name="ChkUnOllama" Content="delollama" IsChecked="False" Margin="8,0,0,4"/>
+      + $RES entries: th 'ลบ Ollama ออกด้วย (BOM AI เป็นผู้ติดตั้ง)' / en 'Also remove Ollama (it was installed by BOM AI)'
+      + Set-Lang: $W_ChkUnOllama.Content = $r['unDelOllama']
+      + Show ChkUnOllama.IsEnabled only when install.json ollama_installed_by_bomai -eq $true (read in $W_BtnUninst.Add_Click);
+        otherwise greyed with note 'Ollama ไม่ได้ถูกติดตั้งโดย BOM AI'.
+      Start-UninstWorker: add SetVariable REMOVE_OLLAMA; $UninstallDef injects param. New step after step 8:
+          if ($REMOVE_OLLAMA -and $bomaiOllama) {
+            # ensure server up
+            $startedHere = $false
+            if (-not (Test-Port 11434).busy) {
+              $env:OLLAMA_MAX_LOADED_MODELS='1'
+              $p = Start-Process -FilePath $ollExe -ArgumentList 'serve' -WindowStyle Hidden -PassThru
+              $startedHere = $true
+              $null = Wait-Http 'http://127.0.0.1:11434/api/version' 60 0 0
+            }
+            foreach ($al in @('bomai-safe','bomai-pro','bomai-safe:pre2-legacy','bomai-pro:pre2-legacy')) {
+              try { $null = & $ollExe 'rm' $al 2>&1 } catch {}
+            }
+            $others = @(); try { $others = @((Invoke-Json GET 'http://127.0.0.1:11434/api/tags' $null).models | Where-Object { $_.name -notmatch '^bomai-' }) } catch {}
+            if ($others.Count -gt 0) { $kept += ('Ollama kept: ' + $others.Count + ' other model(s) present') }
+            else {
+              $op = Test-Port 11434
+              if ($op.busy) {
+                $opi = Get-CimInstance Win32_Process -Filter ('ProcessId=' + $op.pid)
+                if ($opi.ExecutablePath -like '*Programs\Ollama\ollama.exe') { Stop-Process -Id $op.pid -Force; Start-Sleep 3 }
+              }
+              $unins = Join-Path $env:LOCALAPPDATA 'Programs\Ollama\unins000.exe'
+              if (Test-Path $unins) {
+                $up = Start-Process -FilePath $unins -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait -PassThru
+                $removed += ('Ollama app (unins000 exit ' + $up.ExitCode + ')')
+              } else { $kept += 'Ollama uninstaller not found' }
+              $mdir = Get-OllamaModelsRoot   # FIX-03 resolver
+              if ($mdir -and (Test-Path $mdir) -and -not (Get-ChildItem $mdir -Recurse -Force -File -ErrorAction SilentlyContinue | Select-Object -First 1)) {
+                Remove-Item (Split-Path -Parent $mdir) -Recurse -Force -ErrorAction SilentlyContinue  # removes empty .ollama
+                $removed += ('empty model store ' + $mdir)
+              }
+            }
+            if ($startedHere) { try { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue } catch {} }
+          }
+      Console: uninstall mode reads $env:BOMAI_REMOVE_OLLAMA -eq '1' (BAT 1790-1798 area).
+    macos_implementation: |
+      --remove-ollama in install_unix.py uninstall():
+          if remove_ollama and (root/'ollama').exists():
+              stop owned ollama (port 11434 owner whose cmd/exe is under <root>/ollama)
+              ollama rm the 4 bomai aliases via API while up (start <root>/ollama/bin/ollama serve if needed)
+              if /api/tags has only bomai refs or none: shutil.rmtree(root/'ollama'); remove empty ~/.ollama/models tree
+              else: report kept
+          elif remove_ollama: report 'system Ollama present — not installed by BOM AI; remove manually (brew/Ollama.app)'
+    linux_implementation: "same as macOS; additionally never touch /usr/share/ollama (a systemd service install is never ours)."
+    regression_test: |
+      W-R3: fresh machine → install (we install Ollama) → uninstall + remove-ollama → ollama.exe gone,
+            %LOCALAPPDATA%\Programs\Ollama gone, models store removed, RC=0.
+      W-R4: pre-install user Ollama + model llama3.2 → BOM AI install (reuse) → uninstall + remove-ollama →
+            Ollama KEPT, llama3.2 intact, only bomai aliases removed.
+      U-R2: same on linux: root/ollama removed; /usr/bin/ollama untouched.
+    edge_cases: |
+      - Ollama server down + binary ours → start temporarily, rm, stop, unins000. If serve fails to start:
+        skip alias rm, still offer app removal? NO — abort ollama removal, keep everything, report
+        'could not verify remaining models; Ollama kept' (safe side).
+      - unins000.exe exit code nonzero → report in kept list, continue with the rest of uninstall.
+      - OLLAMA_MODELS pointed at a drive with other tools' models → tags list is the source of truth, not paths.
+
+  - id: FIX-03
+    title: "Model-size display measures the wrong folder; model removal only works when Ollama is already up"
+    severity: MEDIUM
+    root_cause: |
+      GUI measures %USERPROFILE%\.ollama\models (BAT 2264). That IS the ollama default (docs.ollama.com/faq)
+      but S9 resolves the store differently (server modelfile FROM path → OLLAMA_MODELS →
+      %LOCALAPPDATA%\Ollama\models, BAT 1273-1290) — two resolvers can disagree whenever OLLAMA_MODELS is set.
+      Removal requires the server up (BAT 1715-1718) and silently skips otherwise.
+    fix_design: |
+      One shared resolver, used by BOTH the GUI size label and any store operation:
+        function Get-OllamaModelsRoot {
+          try {  # 1) ask the server where the bomai manifest lives
+            $t = Invoke-Json GET 'http://127.0.0.1:11434/api/tags' $null
+            $bm = @($t.models | Where-Object { $_.name -match '^bomai-' } | Select-Object -First 1)
+            if ($bm) {
+              $show = Invoke-Json POST 'http://127.0.0.1:11434/api/show' ('{"model":"' + $bm[0].name + '"}')
+              $from = @(([string]$show.modelfile -split "`n" | Where-Object { $_ -match '^\s*FROM\s+\S' }))[0] -replace '^\s*FROM\s+',''
+              if ($from -and (Test-Path $from.Trim())) { return (Split-Path -Parent (Split-Path -Parent $from.Trim())) }
+            }
+          } catch {}
+          if ($env:OLLAMA_MODELS) { return $env:OLLAMA_MODELS }              # 2) env override
+          $d = Join-Path $env:USERPROFILE '.ollama\models'                    # 3) documented default
+          if (Test-Path $d) { return $d }
+          return $null
+        }
+      Removal when server down + we own the binary → temporary serve (code shown in FIX-02). Server down +
+      binary NOT ours → skip model removal, report 'start Ollama and retry, or remove models manually'.
+    windows_implementation: |
+      - Define Get-OllamaModelsRoot once in the GUI scope; $W_BtnUninst.Add_Click (BAT 2259-2270) uses it
+        instead of the hardcoded Join-Path.
+      - $UninstallDef gets its own copy (runspace isolation) for the FIX-02 store-cleanup step.
+    macos_implementation: |
+      install_unix.py helper:
+        def ollama_models_root(cfg):
+            try:
+                tags = request(cfg['ollama_url'] + '/api/tags')['models']
+                bom = next((m for m in tags if m['name'].startswith('bomai-')), None)
+                if bom:
+                    show = request(cfg['ollama_url'] + '/api/show', {'model': bom['name']})
+                    for line in show.get('modelfile','').splitlines():
+                        if line.strip().startswith('FROM '):
+                            p = Path(line.split(None,1)[1].strip())
+                            if p.exists(): return p.parent.parent
+            except Exception: pass
+            if os.environ.get('OLLAMA_MODELS'): return Path(os.environ['OLLAMA_MODELS'])
+            d = Path.home()/'.ollama/models'
+            return d if d.exists() else None
+    linux_implementation: "same helper; extra candidate /usr/share/ollama/.ollama/models last (never removed, information only)."
+    regression_test: |
+      W-R5: set OLLAMA_MODELS=D:\m → install → uninstall page shows size of D:\m (not C:\Users\...).
+      W-R6: uninstall with remove-models while server stopped (we own binary) → aliases removed, store cleaned.
+    edge_cases: "models dir on a different drive than root (size display only — no deletion beyond empty-dir sweep); corrupt manifest JSON → resolver falls through to next candidate."
+
+  - id: FIX-04
+    title: "Update/Repair forces Light tier — Pro user silently downgraded"
+    severity: HIGH
+    root_cause: |
+      XAML hard-checks Light (BAT 1883 IsChecked=True). BtnUpdate (BAT 2297-2304) routes to the components
+      page without loading install.json tier; OPT.tier is then 'light' (BAT ~2318) → resumeKey mismatch →
+      fresh-dir install of the Light model for a Pro user.
+    fix_design: |
+      On entering the installed page, read install.json tier. When BtnUpdate routes to components:
+      pre-check the matching radio. If the user FLIPS tier afterwards, show a one-time inline warning
+      that the other model will be downloaded (~3.4/7.9 GB) — flip is allowed (resumeKey mismatch path
+      handles it correctly). Console: when BOMAI_TIER is unset, default to install.json tier (BAT 1801-1803
+      hardcodes 'light' — bug). unix already does tier = args.tier or cfg.get('tier') (UNIX 407) — keep,
+      add a log line naming the tier source.
+    windows_implementation: |
+      In the detection block (BAT 2311-2335), also: $script:existingTier = [string]$detState.tier
+      In $W_BtnUpdate.Add_Click, after Update-LocUi, before Show-Page:
+          if ($script:existingTier -eq 'pro') { $W_RdoPro.IsChecked = $true } else { $W_RdoLight.IsChecked = $true }
+          Update-TierUi
+      Add flip warning (both radios):
+          $W_RdoPro.Add_Checked({ if ($script:existingTier -eq 'light' -and $W_PgComponentsScroll.Visibility -eq 'Visible') {
+            $W_LTierProBadge.Text = ($RES[$script:lang]['tierSwitchWarn']); $W_LTierProBadge.Foreground = '#B0432F' } })
+      $RES th: tierSwitchWarn='เปลี่ยนเวอร์ชัน: จะดาวน์โหลดโมเดลใหม่' en: 'Tier change: a different model will be downloaded'
+      Console (BAT 1801-1803):
+          $tierEnv = ''
+          if ($env:BOMAI_TIER) { $tierEnv = $env:BOMAI_TIER }
+          elseif (Test-Path $INSTALL_JSON) { try { $tierEnv = [string](Get-Content $INSTALL_JSON -Raw | ConvertFrom-Json).tier } catch {} }
+          if ($tierEnv -ne 'pro') { $tierEnv = 'light' }
+    macos_implementation: "no change needed (tier persists via runtime.json); add: print('Tier source:', 'flag' if args.tier else 'existing config')"
+    linux_implementation: "same as macOS."
+    regression_test: |
+      W-R7: install Pro → run BAT → Update/Repair → components page shows Pro checked → run → tier=pro in
+            install.json, bomai-pro alias intact.
+      W-R8: install Light → console run without BOMAI_TIER → tier stays light; with BOMAI_TIER=pro → pro.
+    edge_cases: "install.json missing/corrupt → default Light + the GPU recommendation badge already handles guidance; tier switch mid-update cancel → rollback keeps old release dir untouched (S0 mismatch uses fresh dir; old dir still committed until S12)."
+
+  - id: FIX-05
+    title: "Re-run seed overwrites admin-tunable OWUI config keys"
+    severity: MEDIUM
+    root_cause: |
+      seed_owui.py put_config (SEED 145-153) is INSERT ... ON CONFLICT DO UPDATE for every key — every
+      reinstall/repair rewrites admin-changed global keys. (Per-user settings in user.settings are already
+      merge-only, SEED 334-343 — that part is fine.)
+    fix_design: |
+      Split the values dict into two classes. Rationale is AUDIT-COUPLED: audit_owui.py hard-checks
+      thai_locale (ui.default_locale='th-TH'), web_search on, signup off, api_keys on, and install_unix
+      verify() requires default_models == installed alias — those keys must stay FORCE or the release gate
+      fails / the product breaks. Everything not gate-coupled becomes PRESERVE.
+        FORCE (always upsert): ollama.enable, openai.enable, openai.api_base_urls, openai.api_keys,
+          openai.api_configs, direct.enable, web.search.enable, web.search.engine,
+          web.search.searxng_query_url, ui.default_models, ui.default_locale, ui.enable_login_form,
+          ui.enable_signup, auth.enable_api_keys
+        PRESERVE (insert-if-absent): web.search.result_count, web.search.searxng_language,
+          web.search.bypass_embedding_and_retrieval, web.search.bypass_web_loader,
+          task.query.search.enable
+        MERGE (already correct): ui.default_interface_settings, ui.visibility, user.permissions,
+          ui.banners (by id), user.settings per-user
+      Escape hatch: --force-reseed flag (or install.json force_reseed=true) → all keys FORCE (v2.0.3 behavior)
+      for future breaking changes. verify_rows (SEED 156-165) verifies FORCE keys exactly and PRESERVE keys
+      as present-or-equal. Bump SEED_REVISION → 'bomai-v2.0.4-hf1-1'.
+    windows_implementation: "BAT change = re-embed the edited seed_owui.py into $PIN.seedPayload (Section 6, step 4). S8b call site (BAT 1176-1191) gains --force-reseed only when install.json force_reseed=true."
+    macos_implementation: |
+      seed_owui.py patch (shared source, all 3 installers):
+        PRESERVE_KEYS = {"web.search.result_count","web.search.searxng_language",
+                         "web.search.bypass_embedding_and_retrieval","web.search.bypass_web_loader",
+                         "task.query.search.enable"}
+        def put_config(db, key, value, now, force):
+            row = db.execute("SELECT value FROM config WHERE key=?", (key,)).fetchone()
+            if row and json_value(row[0]) == value: return
+            if row and key in PRESERVE_KEYS and not force: return
+            db.execute("INSERT INTO config(key,value,updated_at) VALUES (?,?,?) "
+                       "ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at",
+                       (key, encode(value), now))
+      seed() signature gains force_reseed=False; main() gains --force-reseed.
+      verify_rows: for key in values: if key in PRESERVE_KEYS and not force → assert row exists (any value) else exact match.
+    linux_implementation: "identical (same file)."
+    regression_test: |
+      W-R9: install → in OWUI admin set web.search.result_count=5 → run BAT Update/Repair → value still 5;
+            ui.default_models still matches tier; audit --verify passes (thai_locale etc. all true).
+      U-R3: same on linux.
+    edge_cases: |
+      - admin changed a FORCE key (e.g. pointed openai.api_base_urls elsewhere) → repair intentionally restores
+        BOM wiring; documented in release notes (FORCE = product invariants).
+      - force_reseed=true + user data → full v2.0.3 overwrite; QC covers both branches.
+      - bomai_seed_state row tracks (revision, config_sha) — PRESERVE keys change config sha only when seed
+        would write; absent-key inserts count as changes (correct).
+
+  - id: FIX-06
+    title: "Ollama version pinned to exactly 0.40.13 — any other version hard-fails the install"
+    severity: MEDIUM
+    root_cause: |
+      S3 requires exact equality server-side (BAT 791) and CLI-side (BAT 805-812). unix accepts ANY running
+      version (UNIX 243-246). bom_runtime.py refuses to start when the server version != expected_version
+      (bom_runtime 2542,2565-2566), and Windows writes expected_version='0.40.13' unconditionally into
+      runtime.json (S8a, ~BAT 1119-1124) → the runtime, not the model, is what actually breaks on drift.
+    fix_design: |
+      Policy (same on all OS):
+        - exact PIN (0.40.13)      → accept silently
+        - same minor series 0.40.x → accept with log line 'compatible ollama <v> (pinned 0.40.13)'
+        - different minor (≤0.39.x or ≥0.41.x):
+            GUI     → modal-style inline page: warn + [ใช้เวอร์ชันนี้ต่อ] / [ยกเลิก]
+            console → fail unless env BOMAI_ACCEPT_OLLAMA_VERSION=<exact observed version>
+            unix    → fail unless --accept-ollama-version <exact observed version>
+        - record install.json ollama_version_accepted=<observed>
+      CRITICAL: write the ACCEPTED version into runtime.json expected_version (S8a $runtimeCfgNew and the
+      S12 rewrite; unix cfg['expected_version'] already = observed — UNIX 274). bom_runtime.py itself is
+      FORBIDDEN to change — we only change the config value it reads. Verify-after-write: gateway /healthz 200.
+    windows_implementation: |
+      Replace BAT 790-798 block:
+          if ($vn.Major -eq 0 -and $vn.Minor -eq 40) {
+            $ollamaReused = $true; $acceptedVer = $v.version
+            if ($vn -ne [version]$PIN.ollamaVer) { Emit 'log' ('compatible ollama ' + $v.version + ' (pinned ' + $PIN.ollamaVer + ')') }
+            $pr = Get-Process -Id $p11434.pid -ErrorAction SilentlyContinue
+            if ($pr -and $pr.Path) { $ollamaExe = Join-Path (Split-Path -Parent $pr.Path) 'ollama.exe' }
+          } else {
+            $accept = ($env:BOMAI_ACCEPT_OLLAMA_VERSION -eq $v.version)
+            if ($OPT.gui) { $script:ollamaVersionChallenge = $v.version; Fail 'E-OLLAMAVER-GUI' $v.version }  # GUI catches below
+            elseif (-not $accept) { Fail 'E-OLLAMA' ('ollama ' + $v.version + ' unsupported (pinned series 0.40.x). Re-run with BOMAI_ACCEPT_OLLAMA_VERSION=' + $v.version + ' to accept.') }
+            else { $ollamaReused = $true; $acceptedVer = $v.version }
+          }
+      GUI: catch E-OLLAMAVER-GUI at the page level → show confirm page (reuse error page pattern with custom
+      buttons); on accept set $script:acceptedOllamaVer and re-enter engine with env var set for the runspace.
+      CLI check (BAT 805-812): same series logic applied to "& $ollamaExe --version" output.
+      S8a: expected_version=$acceptedVer in $runtimeCfgNew. Save-State s3 adds ollama_version_accepted=$acceptedVer.
+      S0 verify-only path: leave as-is (services already validated).
+    macos_implementation: |
+      install_ollama (UNIX 242-274): after observing info['version']:
+          v = info['version'].split('-')[0].split('.')
+          series_ok = (v[:2] == ['0','40'])
+          if not series_ok and args.accept_ollama_version != info['version']:
+              raise RuntimeError('ollama %s unsupported (pinned series 0.40.x); pass --accept-ollama-version %s' % (info['version'], info['version']))
+          cfg['expected_version'] = info['version']; cfg['ollama_version_accepted'] = info['version']
+      argparse gains --accept-ollama-version.
+    linux_implementation: "identical."
+    regression_test: |
+      W-R10: machine with ollama 0.40.11 → install → accepted with log; gateway healthz 200; chat works.
+      W-R11: machine with ollama 0.41.0 → console without env → E-OLLAMA with exact instruction; with
+             BOMAI_ACCEPT_OLLAMA_VERSION=0.41.0 → proceeds; runtime.json expected_version=0.41.0.
+    edge_cases: |
+      - Version string with build suffix ('0.40.13-1-abc') → strip at '-' before compare (already done BAT 789).
+      - Server reports newer but CLI binary older (PATH shadowing) → the SERVER on 11434 is the source of truth;
+        CLI check only runs when no server is up.
+      - QC mode must not be weakened: QC rigs always run the exact pin; the accept path is for street users.
+
+  - id: FIX-07
+    title: "30 GB free-space check fires on the verify-only re-run path"
+    severity: LOW
+    root_cause: "S0 fast path calls Test-InstallRoot (BAT 671-672) which hard-fails on reason=SPACE even though a verify-only run downloads nothing."
+    fix_design: "Verify-only tolerates low space; structural root problems (UNC/FS/reparse/not-ready) still fail."
+    windows_implementation: |
+      BAT 671-672 →
+          $rootChk0 = Test-InstallRoot $BOMAI_ROOT_
+          if (-not $rootChk0.ok -and $rootChk0.reason -ne 'SPACE') { Fail 'E-DISK' ('install root invalid on re-run: ' + $rootChk0.reason) }
+          if (-not $rootChk0.ok -and $rootChk0.reason -eq 'SPACE') { Emit 'log' ('verify-only: low disk (' + $rootChk0.freeGB + ' GB free) tolerated - nothing to download') }
+    macos_implementation: "N/A — unix installer has no disk gate (documented parity gap; out of scope for 2.0.4)."
+    linux_implementation: "N/A."
+    regression_test: "W-R12: fill drive to <30 GB free (or mock) → re-run BAT on COMPLETE install → reused_verified_existing, RC=0; fresh install on same drive still E-DISK."
+    edge_cases: "Test-InstallRoot also does a write-probe — on verify-only the probe is harmless; keep it (catches read-only mounts)."
+
+  - id: FIX-08
+    title: "Console mode ignores install-root.txt → second install tree"
+    severity: MEDIUM
+    root_cause: |
+      The root pointer (%LOCALAPPDATA%\BOMAI\state\install-root.txt) is honored only for update/uninstall
+      (BAT 175-186). Console mode (BAT 1800-1808) defaults to the DEFAULT root when no env override exists →
+      user who GUI-installed to D:\BOMAI then runs 'console' gets a second tree at %LOCALAPPDATA%\BOMAI.
+      unix has NO pointer at all: re-running without --root uses ~/BOM-AI regardless of where the user installed.
+    fix_design: |
+      Windows console/install: when neither BOMAI_ROOT_OVERRIDE nor BOMAI_ROOT is set and the pointer exists
+      and points at a dir containing state\install.json → adopt the pointed root (log 'adopted install root
+      from pointer: <root>'). GUI already routes to the installed page; add a hard guard in BtnInstall:
+      if a COMPLETE install exists at another root and the chosen root differs → refuse with a clear message
+      (use Update/Repair from the installed page, or uninstall first). unix: new pointer file
+      ${XDG_CONFIG_HOME:-~/.config}/bomai/install-root written at install; startup resolution order:
+      --root flag > BOMAI_ROOT env > pointer > ~/BOM-AI default. If default would be used while the pointer
+      shows an existing install elsewhere → abort with the exact --root command to use.
+    windows_implementation: |
+      Extend the pointer-adoption block (BAT 175): change condition to
+          if ($MODE -in 'install','console','update','uninstall' -and -not $env:BOMAI_ROOT_OVERRIDE -and -not $env:BOMAI_ROOT -and (Test-Path $ROOT_PTR)) {
+      inside, also require (Test-Path (Join-Path $ptrRoot 'state\install.json')) before adopting.
+      GUI guard in $W_BtnInstall.Add_Click (before Show-Page 'progress'):
+          if ($script:existingRoot -and ((Get-NormalizedRoot $W_LocPath.Text) -ne $script:existingRoot)) {
+            $W_LLocErr.Text = ($RES[$script:lang]['locErrExisting'] -f $script:existingRoot)  # th/en strings added
+            Show-Page 'location'; return
+          }
+    macos_implementation: |
+      install_unix.py main() root resolution (UNIX 376):
+          def resolve_root(args):
+              if args.root_flag_given: return Path(args.root).expanduser().resolve()
+              if os.environ.get('BOMAI_ROOT'): return Path(os.environ['BOMAI_ROOT']).expanduser().resolve()
+              ptr = Path(os.environ.get('XDG_CONFIG_HOME', Path.home()/'.config'))/'bomai'/'install-root'
+              if ptr.exists():
+                  p = Path(ptr.read_text().strip())
+                  if (p/'runtime.json').exists(): return p
+              return Path.home()/'BOM-AI'
+      (make --root default=None to distinguish flag-vs-default; after successful install, write the pointer.)
+    linux_implementation: "identical."
+    regression_test: |
+      W-R13: GUI install to D:\BOMAI → run 'Install-BOM-AI-Online.bat console' → log shows adopted D:\BOMAI;
+             no %LOCALAPPDATA%\BOMAI\releases created.
+      U-R4: install --root /opt/bomai → re-run plain ./install-bom-ai-linux.sh → aborts naming /opt/bomai;
+            re-run with --root /opt/bomai → resumes correctly.
+    edge_cases: "pointer exists but target deleted → fall through to default (fresh install), rewrite pointer at S2; pointer target is QC root (BOMAI_QC=1) → QC never writes the production pointer (QC block already re-targets ROOT_PTR, BAT 1585-1590 — keep)."
+
+  - id: FIX-09
+    title: "Shortcut removal matches on the substring 'BOMAI' in .lnk arguments"
+    severity: LOW
+    root_cause: "Uninstall (BAT 1655-1668) keeps/removes shortcuts by `$l.Arguments -like '*BOMAI*'` → misses installs whose root path lacks 'BOMAI' (e.g. D:\\AI), and could false-positive a foreign shortcut."
+    fix_design: |
+      Track exact shortcut paths at creation (install.json shortcut_paths, BAT S11 1447-1469). Uninstall
+      deletes exactly those paths (with a safety re-check that the target points into the recorded install
+      root). Fallback: keep the legacy pattern pass for pre-2.0.4 installs (shortcut_paths absent).
+      unix: runtime.json created_paths[] records Desktop .command / LaunchAgent plist / .desktop files;
+      uninstall deletes exactly those.
+    windows_implementation: |
+      S11 (BAT 1471):
+          Save-State @{ s11='ok'; shortcut_paths=$createdShortcuts }
+      where $createdShortcuts collects each saved .lnk path (desktop/startmenu/startup, only when created).
+      Uninstall step 2 replacement:
+          $known = @()
+          try { $known = @((Get-Content $INSTALL_JSON -Raw | ConvertFrom-Json).shortcut_paths) } catch {}
+          if ($known.Count -gt 0) {
+            foreach ($lnkPath in $known) {
+              if (Test-Path $lnkPath) {
+                try { $l = (New-Object -ComObject WScript.Shell).CreateShortcut($lnkPath)
+                      if ($l.Arguments -and $l.Arguments.IndexOf($BOMAI_ROOT, [StringComparison]::OrdinalIgnoreCase) -ge 0) {
+                        Remove-Item $lnkPath -Force; $removed += ('shortcut ' + $lnkPath) } else { $kept += ('shortcut target changed - kept: ' + $lnkPath) }
+                } catch { $kept += ('shortcut check failed: ' + $lnkPath) }
+              }
+            }
+          } else { <legacy *BOMAI* pattern pass, unchanged> }
+      Note: $INSTALL_JSON inside $UninstallDef = Join-Path $STATE_DIR 'install.json' (STATE_DIR injected already).
+    macos_implementation: "create_launcher (UNIX 330-353): cfg['created_paths'] = [str(desktop), str(agent)] / [desktop, autostart] (+ launcher itself); write via write_json(config_path, cfg)."
+    linux_implementation: "same."
+    regression_test: "W-R14: install to D:\\AI (no 'BOMAI' in path) → uninstall → all 3 shortcuts removed; foreign shortcut containing 'BOMAI' in args elsewhere is untouched on legacy path."
+    edge_cases: "user moved a shortcut to another folder → recorded path missing → skip silently (Remove-Item guarded by Test-Path); user pinned to taskbar → explorer-owned copy, documented as manual removal."
+
+  - id: FIX-10
+    title: "Already-installed page shows the release dir path where the version should be"
+    severity: LOW
+    root_cause: "BAT 2326: $script:existingVer = [string]$detState.rel — 'rel' is releases\\2.0.3\\b<ts>, displayed as 'BOM AI <path>'."
+    fix_design: "Use install.json release field (written by Save-State as release=$PIN.release). v2.0.4 also writes version='2.0.4'; prefer version, fall back to release, then to the running installer release."
+    windows_implementation: |
+      BAT 2326 →
+          $script:existingVer = [string]$detState.version
+          if (-not $script:existingVer) { $script:existingVer = [string]$detState.release }
+          if (-not $script:existingVer) { $script:existingVer = $PIN.release }
+          $script:existingVer = 'v' + $script:existingVer
+      (instInfo format 'BOM AI {0} ...' then prints 'BOM AI v2.0.4 ติดตั้งอยู่ที่ D:\BOMAI'.)
+    macos_implementation: "unix prints VERSION from runtime.json cfg['version'] at startup of --start; no UI bug. Parity: ensure cfg['version']=VERSION written every run (already, UNIX 419)."
+    linux_implementation: "same."
+    regression_test: "W-R15: install → re-run → installed page shows 'BOM AI v2.0.4 ติดตั้งอยู่ที่ <root>'."
+    edge_cases: "v2.0.3 install.json (no version field) → falls back to release='2.0.3' — correct display for upgrades from 2.0.3."
+
+# ════════════════════════════════════════════════════════════════════════════
+# SECTION 3: PROCESS MANAGEMENT DESIGN  (owner req 1.2: warn + auto-kill, safely)
+# ════════════════════════════════════════════════════════════════════════════
+section_3_process_management:
+
+  detect_by_port:
+    windows: |
+      function Test-Port([int]$port) {  # existing helper, keep
+        try { $c = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction Stop | Select-Object -First 1
+              $proc = Get-Process -Id $c.OwningProcess -ErrorAction SilentlyContinue
+              return @{busy=$true; pid=$c.OwningProcess; proc=($proc.ProcessName)} } catch { return @{busy=$false; pid=0; proc=''} } }
+    macos_linux: |
+      def port_owner_pids(port):
+          cmds = (["lsof", "-nP", "-tiTCP:%d" % port, "-sTCP:LISTEN"], ["fuser", "%d/tcp" % port])
+          for cmd in cmds:
+              try:
+                  out = subprocess.run(cmd, capture_output=True, text=True)
+                  pids = [int(p) for p in (out.stdout + " " + out.stderr).split() if p.isdigit()]
+                  if pids: return pids
+              except FileNotFoundError: continue
+          return []   # last-resort: parse `ss -ltnp` on linux; macOS always ships lsof
+      def pid_cmdline(pid):
+          p = Path("/proc")/str(pid)/"cmdline"
+          if p.exists(): return p.read_bytes().replace(b"\0", b" ").decode(errors="replace")
+          return subprocess.run(["ps","-p",str(pid),"-o","command="], capture_output=True, text=True).stdout
+
+  canonical_stop_helper_windows: |
+    function Stop-BomaiOwnedProcesses {
+      # v2.0.4 FIX-01: stop every BOM-AI-owned service for THIS root. Port-owner-first,
+      # ownership-verified, wrapper-aware. NEVER kills a foreign listener.
+      # Define INSIDE $EngineDef and $UninstallDef (runspace isolation).
+      param([string]$Root, [int[]]$ManagedPorts = @(11435,8080,8888), [int]$TimeoutSec = 30)
+      $res = @{ stopped=@(); kept=@(); foreign=@() }
+      $rootCanon = ([string]$Root).TrimEnd('\')
+      function Test-OwnedPid([int]$procId) {
+        try { $pi = Get-CimInstance Win32_Process -Filter ("ProcessId=" + $procId) -ErrorAction Stop } catch { return $false }
+        if ($pi.ExecutablePath -and $pi.ExecutablePath.StartsWith($rootCanon, [StringComparison]::OrdinalIgnoreCase)) { return $true }
+        if ($pi.CommandLine -and $pi.CommandLine.IndexOf($rootCanon, [StringComparison]::OrdinalIgnoreCase) -ge 0) { return $true }
+        return $false
+      }
+      # 1) port owners: kill listener, then its wrapper parent if the wrapper is ours
+      foreach ($port in $ManagedPorts) {
+        $sw = [Diagnostics.Stopwatch]::StartNew()
+        while ($sw.Elapsed.TotalSeconds -lt $TimeoutSec) {
+          $t = Test-Port $port
+          if (-not $t.busy) { break }
+          if (-not (Test-OwnedPid $t.pid)) { $res.foreign += ('port ' + $port + ' pid ' + $t.pid + ' (' + $t.proc + ')'); break }
+          $parent = 0
+          try { $parent = [int](Get-CimInstance Win32_Process -Filter ("ProcessId=" + $t.pid)).ParentProcessId } catch {}
+          Write-Log ('auto-stop: owned listener pid ' + $t.pid + ' on port ' + $port + ' (' + $t.proc + ')')
+          Stop-Process -Id $t.pid -Force -ErrorAction SilentlyContinue
+          $res.stopped += ('listener ' + $t.proc + ' pid ' + $t.pid + ' port ' + $port)
+          if ($parent -gt 0 -and (Test-OwnedPid $parent)) {
+            Start-Sleep -Milliseconds 800
+            Stop-Process -Id $parent -Force -ErrorAction SilentlyContinue   # wrapper powershell; harmless if already exited
+            $res.stopped += ('wrapper pid ' + $parent)
+          }
+          Start-Sleep -Milliseconds 500
+        }
+      }
+      # 2) orphan sweep: known image names whose CommandLine references this root
+      foreach ($img in @('python.exe','pythonw.exe','powershell.exe','pwsh.exe','open-webui.exe','ollama.exe')) {
+        Get-CimInstance Win32_Process -Filter ("Name='" + $img + "'") -ErrorAction SilentlyContinue | Where-Object {
+          $_.CommandLine -and $_.CommandLine.IndexOf($rootCanon, [StringComparison]::OrdinalIgnoreCase) -ge 0 -and $_.ProcessId -ne $PID
+        } | ForEach-Object {
+          Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+          $res.stopped += ('orphan ' + $_.Name + ' pid ' + $_.ProcessId)
+        }
+      }
+      # 3) pid files: legacy hint only (covers a service that never opened its port)
+      foreach ($pf in @('gateway.pid','owui.pid','searxng.pid')) {
+        $f = Join-Path (Join-Path $rootCanon 'state') $pf
+        if (Test-Path $f) {
+          $p_ = 0; try { $p_ = [int](Get-Content $f -Raw) } catch {}
+          if ($p_ -gt 0 -and (Test-OwnedPid $p_)) { Stop-Process -Id $p_ -Force -ErrorAction SilentlyContinue; $res.stopped += ('pidfile ' + $pf + ' pid ' + $p_) }
+          Remove-Item $f -Force -ErrorAction SilentlyContinue
+        }
+      }
+      # 4) verify
+      foreach ($port in $ManagedPorts) { if ((Test-Port $port).busy) { $res.kept += ('port still busy: ' + $port) } }
+      return $res
+    }
+
+  canonical_stop_helper_unix: |
+    # install_unix.py — replaces stop() (UNIX 109-121). Same semantics on macOS+Linux.
+    def stop(root, name, port, timeout=20):
+        root_s = str(root)
+        pidfile = root / "state" / (name + ".pid")
+        candidates = []
+        if pidfile.exists():
+            try: candidates.append(int(pidfile.read_text().strip()))
+            except ValueError: pidfile.unlink(missing_ok=True)
+        candidates += [p for p in port_owner_pids(port) if p not in candidates]
+        if not candidates:
+            if busy(port): raise RuntimeError("Port occupied by unowned service: %d" % port)
+            return "free"
+        ours = []
+        for p in candidates:
+            cmd = pid_cmdline(p)
+            if not cmd: continue                      # already dead
+            if root_s in cmd: ours.append(p)
+            elif p in port_owner_pids(port): raise RuntimeError("Port %d held by foreign pid %d: %s" % (port, p, cmd[:120]))
+        for p in ours:
+            print("[stop] SIGTERM", name, "pid", p, flush=True)   # user-visible warn (req 1.2)
+            try: os.kill(p, signal.SIGTERM)
+            except ProcessLookupError: continue
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if not busy(port) and all(not pid_cmdline(p) for p in ours):
+                pidfile.unlink(missing_ok=True); return "stopped"
+            time.sleep(0.5)
+        for p in ours:
+            print("[stop] SIGKILL", name, "pid", p, flush=True)
+            try: os.kill(p, signal.SIGKILL)
+            except ProcessLookupError: pass
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline and busy(port): time.sleep(0.5)
+        if busy(port): raise RuntimeError("Graceful stop timed out for " + name)
+        pidfile.unlink(missing_ok=True)
+        return "stopped"
+
+  warn_and_autokill_policy: |
+    1. Every SIGTERM/SIGKILL/Stop-Process prints a user-visible line (GUI log box / console):
+       th: "หยุด process ที่ค้าง: <name> pid <n>" / en: "stopped stuck process: <name> pid <n>".
+    2. Auto-kill ONLY when ownership is proven (path match). Foreign listener → abort that operation
+       with E-PORT / RuntimeError listing pid+image; never kill.
+    3. Order on uninstall/reinstall: gateway(11435) → owui(8080) → searxng(8888); ollama(11434) only
+       under the remove-ollama opt-in and only when ollama_installed_by_bomai.
+    4. Verify-after-stop: all managed ports free (or operation aborts before touching files).
+    5. Stuck-case matrix (owner req 1.2): wrapper dead+child alive → port rule; child dead+wrapper alive
+       → parent rule; pid file stale → port rule; pid reused by foreign app → ownership test refuses.
+
+# ════════════════════════════════════════════════════════════════════════════
+# SECTION 4: UNINSTALL DESIGN
+# ════════════════════════════════════════════════════════════════════════════
+section_4_uninstall_design:
+
+  defaults_and_optins:
+    removed_by_default: "releases/, cache/, logs/, state/ (install.json, runtime.json, pid files, active-release.txt), shortcuts (recorded paths), root pointer file, python registry ghost (if points under root), empty dir sweep"
+    kept_by_default: "data/ (chats+settings), Ollama app + ALL models, Tailscale, user Python, foreign shortcuts"
+    opt_in:
+      - "remove data/ — GUI ChkUnData (exists) / BOMAI_REMOVE_DATA=1 / unix --remove-data"
+      - "remove bomai model aliases — GUI ChkUnModels (exists) / BOMAI_REMOVE_MODELS=1 / unix --remove-models"
+      - "remove Ollama (only if we installed it) — NEW GUI ChkUnOllama / BOMAI_REMOVE_OLLAMA=1 / unix --remove-ollama"
+
+  detect_we_installed_ollama:
+    windows: "install.json ollama_installed_by_bomai=true (new S3 field; absent on 2.0.3 state → treat as false → opt-in greyed out; safe side)"
+    macos_linux: "<root>/ollama directory exists (tgz install location) AND cfg.get('ollama_installed_by_bomai') is not False"
+
+  flow_windows: |
+    0. Mutex 'Local\BOM-AI-Installer' (shared name, FIX-01) — E-MUTEX if an install is running.
+    1. Stop-BomaiOwnedProcesses (11435,8080,8888); foreign listener → E-PORT abort (nothing deleted yet).
+    2. Shortcuts: recorded shortcut_paths (FIX-09) else legacy pattern; remove start-menu folder if empty.
+    3. releases/ remove (after ports verified free → no more locked files).
+    4. cache/ remove.
+    5. state/, logs/ remove (logs last — Write-Log dies with it, by design).
+    6. Root pointer at %LOCALAPPDATA%\BOMAI\state\install-root.txt remove; empty-dir sweep up the chain.
+    7. Python registry ghost cleanup (existing, keep as-is).
+    8. remove-models opt-in: ensure server (temporary serve if we own binary) → ollama rm 4 aliases →
+       never touch other models.
+    9. remove-ollama opt-in (FIX-02): alias rm → tags check → unins000 /VERYSILENT /SUPPRESSMSGBOXES
+       /NORESTART → empty-store sweep.
+    10. remove-data opt-in: data/ remove (after ALL services stopped in step 1 — sqlite WAL closed).
+    11. Summary page: removed[] / kept[] (existing UI), RC=0.
+
+  flow_macos: |
+    install_unix.py --uninstall [--remove-data] [--remove-models] [--remove-ollama]:
+    1. lock: fcntl.flock(<root>/state/installer.lock, LOCK_EX|LOCK_NB) — new; covers install vs uninstall races
+       (unix equivalent of the Windows mutex; add the same flock to install start).
+    2. stop owui/gateway/searxng (new stop(), Section 3).
+    3. launchctl bootout gui/<uid>/app.bomai.local (ignore failure) ; rm plist ; rm ~/Desktop/'BOM AI.command'
+       — exact paths from runtime.json created_paths, fallback to the documented defaults.
+    4. opt-ins: models (ollama rm × 4 via API; temp-serve our binary if needed) ;
+       ollama (stop owned serve on 11434 → rmtree <root>/ollama → empty-store sweep;
+       system ollama → print manual-removal note, keep).
+    5. tree removal: everything under <root> EXCEPT data/ (unless --remove-data): runtime/, .venv*,
+       searxng-*, frontend/, ollama/ (only under remove-ollama), cache/, logs/, state/, runtime.json,
+       Modelfile.*, start scripts.
+    6. pointer ${XDG_CONFIG_HOME:-~/.config}/bomai/install-root remove; rmdir <root> if empty.
+    7. print removed/kept summary; exit 0.
+
+  flow_linux: "identical to macOS except step 3 removes ~/.local/share/applications/bomai.desktop and ~/.config/autostart/bomai.desktop (no launchctl)."
+
+  ollama_removal_matrix:
+    windows: "unins000.exe (Inno) at %LOCALAPPDATA%\\Programs\\Ollama\\unins000.exe, flags /VERYSILENT /SUPPRESSMSGBOXES /NORESTART; stop our serve first; models store removed only when empty"
+    macos:   "ours: rmtree <root>/ollama. NOT ours: keep — print 'remove via: brew uninstall ollama  (หรือลบ Ollama.app เอง)'; NEVER run brew from the installer"
+    linux:   "ours: rmtree <root>/ollama. NOT ours: keep — print manual note; NEVER touch /usr/local/bin/ollama, /usr/share/ollama, or systemd units (we created none)"
+
+# ════════════════════════════════════════════════════════════════════════════
+# SECTION 5: REINSTALL DESIGN
+# ════════════════════════════════════════════════════════════════════════════
+section_5_reinstall_design:
+
+  same_version_rerun: |
+    resumeKey identical + COMPLETE → S0 verify-only fast path (restart stopped services, verify alias,
+    RC=0, 'reused_verified_existing'). FIX-07 removes the false E-DISK on this path. No data touched,
+    no re-download, no re-seed. (unix: full re-run today — v2.0.4 keeps that behavior; it is idempotent:
+    model pull skipped via tags check, venvs reused, seed is merge/preserve after FIX-05.)
+
+  version_upgrade_203_to_204:
+    trigger: "release 2.0.3 → 2.0.4 changes resumeKey → fresh release dir path (BAT 731+)."
+    sequence: |
+      1. Detection: GUI → installed page showing real version (FIX-10) → user picks Update/Repair →
+         tier pre-selected from install.json (FIX-04).
+      2. Stop-BomaiOwnedProcesses on the OLD root services (FIX-01 — this is the step that v2.0.3
+         got wrong; old OWUI must release 8080 before S8).
+      3. Engine runs S1..S12 into releases\2.0.4\b<ts>; downloads reuse cache\sha256 (hash-verified).
+      4. S8a dataDir resolution: prevInstall.dataDir honored (existing logic, BAT ~1126-1130) →
+         chats/settings/first-login carry over untouched.
+      5. gateway_key carried over from existing runtime.json (existing logic) → OWUI seed re-wires
+         same key; sessions survive (WEBUI secret in data/ untouched).
+      6. Seed with FIX-05 policy (PRESERVE class), SEED_REVISION bump, force_reseed absent.
+      7. S9: model already in store → ollama pull returns instantly (manifest present), alias re-created
+         onto same blobs (no re-download); legacy alias preserved (existing 4A.2 logic).
+      8. S11 shortcuts re-created → point at the NEW release; shortcut_paths updated in install.json.
+      9. S12 commit flips active-release.txt; post-commit cleanup (NEW): delete release dirs of older
+         releases keeping the current one + newest previous (rollback window):
+             Get-ChildItem <root>\releases -Directory | Where-Object Name -ne $PIN.release →
+             remove all but the single newest build dir of the previous release.
+      10. Final state: one active 2.0.4 release, old build kept as rollback, zero user-data writes.
+
+  preservation_rules:
+    config_keys: "FIX-05 classification (FORCE/PRESERVE/MERGE) is the whole rule set — do not add ad-hoc overwrites."
+    carried_forward: "data/, first-login.json, gateway_key, tier, install root, model store + extra models, user shortcuts choice (shortcut/startmenu/signin defaults re-read from install.json components record — NEW: persist OPT flags at S2 as install.json options{...}; pre-check boxes on repair)"
+    never_carried: "pid files, logs, cache, old release binaries, CORS/QC origins"
+
+  unix_reinstall_flow: |
+    Plain re-run (any reason) now: resolves root (FIX-08 pointer) → stops owned services (new stop())
+    → re-copies payload → install_ollama (reuse, FIX-06 policy) → model_setup (idempotent) → venvs
+    (pip re-run, idempotent) → HF-1 (idempotent, fail-closed) → seed (FIX-05 policy) → verify →
+    launcher re-written + created_paths refreshed. Data/, first-login.json, gateway_key
+    (cfg.setdefault) preserved by construction.
+
+# ════════════════════════════════════════════════════════════════════════════
+# SECTION 6: HOW-TO FOR ZCODE  (implementation order; verify after EVERY step)
+# ════════════════════════════════════════════════════════════════════════════
+section_6_howto_for_zcode:
+
+  files_to_modify:
+    - "Install-BOM-AI-Online.bat (master Windows installer; the PS payload after marker :::BOMAI_PS_PAYLOAD_20261030)"
+    - "seed_owui.py (shared source — FIX-05; lives in repo AND embedded 2×: $PIN.seedPayload in the BAT, and inside the unix zip payload)"
+    - "install_unix.py (shared macOS+Linux payload — FIX-01/02/03/04/06/08/09 + new --uninstall)"
+    - "build_installers.py (regenerates install-bom-ai-linux.sh + install-bom-ai-mac.command from payload; the sh/command files are GENERATED — never hand-edit)"
+    - "NOT bom_runtime.py, NOT bomai_han_policy.py / bomai_owui_boundary.py / bomai_owui_han_guard.py / install_hf1.py (FORBIDDEN)"
+
+  step_by_step:
+    - step: 1
+      action: "BAT: add Stop-BomaiOwnedProcesses + Test-OwnedPid + Get-OllamaModelsRoot INSIDE both $EngineDef and $UninstallDef (copy the Section 3 code verbatim; runspace isolation means 2 copies — add a build comment 'KEEP IN SYNC')"
+      verify: "extract payload and parse: powershell -NoProfile -Command \"$t=[IO.File]::ReadAllText('Install-BOM-AI-Online.bat'); $p=$t.Substring($t.IndexOf(':::BOMAI_PS_PAYLOAD_20261030')); $e=$null; [void][System.Management.Automation.PSParser]::Tokenize($p,[ref]$e); 'TOKENS_OK'\""
+    - step: 2
+      action: "BAT: FIX-01 call sites (uninstall step 0; fresh-dir stop block 731-744), mutex unification (775, 668, 1622 → 'Local\\BOM-AI-Installer')"
+      verify: "grep -n 'BOM-AI-Installer' Install-BOM-AI-Online.bat → exactly 3 hits, all identical string"
+    - step: 3
+      action: "BAT: FIX-04 (tier preselect + console tier default), FIX-07 (S0 disk tolerance), FIX-08 (pointer adoption + BtnInstall guard), FIX-10 (version display), FIX-06 (series accept + acceptedVer → runtime.json expected_version + install.json), FIX-09 (shortcut_paths record at S11 + uninstall consumer), FIX-02 (ChkUnOllama XAML + RES strings + worker var + removal block), FIX-03 (resolver in GUI size label)"
+      verify: "same PSParser tokenize; then validatepath smoke: set BOMAI_VALIDATE_PATH=D:\\ & Install-BOM-AI-Online.bat validatepath → JSON ok=true (on a drive with space)"
+    - step: 4
+      action: "seed_owui.py: apply FIX-05 patch; bump SEED_REVISION='bomai-v2.0.4-hf1-1'; add --force-reseed"
+      verify: "python seed_owui.py --help shows --force-reseed; python -m py_compile seed_owui.py"
+    - step: 5
+      action: "re-embed seed into BAT: $b64=[Convert]::ToBase64String([IO.File]::ReadAllBytes('seed_owui.py')); replace the single-quoted $PIN.seedPayload value; CONFIRM the byte length changes and quotes intact"
+      verify: "powershell: decode the new payload back and diff against seed_owui.py → identical; ALSO confirm $PIN has no other seedPayload key"
+    - step: 6
+      action: "install_unix.py: new stop() + port_owner_pids + pid_cmdline + ollama_models_root; --uninstall/--remove-data/--remove-models/--remove-ollama/--accept-ollama-version args; resolve_root pointer logic; created_paths in create_launcher; flock installer.lock; tier-source log; expected_version=observed"
+      verify: "python -m py_compile install_unix.py && python install_unix.py --help | grep -E 'uninstall|remove-ollama|accept-ollama-version'"
+    - step: 7
+      action: "run build_installers.py → regenerates install-bom-ai-linux.sh + install-bom-ai-mac.command; confirm zip payload contains the NEW install_unix.py + seed_owui.py"
+      verify: "bash -n install-bom-ai-linux.sh; unzip -p install-bom-ai-mac.command 2>/dev/null || python -c \"import re,base64,zipfile,io; t=open('install-bom-ai-mac.command').read(); z=zipfile.ZipFile(io.BytesIO(base64.b64decode(re.search(r'b64decode\\\\(\\\"([^\\\"]+)\\\"\\\\)',t).group(1)))); print(z.namelist())\""
+    - step: 8
+      action: "bump $PIN.release='2.0.4' / $script:BOMAI_VERSION='v2.0.4' / VERSION='2.0.4' (unix) / GUI HdrVersion Text / RES meta strings; add install.json schema=2 + version fields"
+      verify: "grep -n \"2.0.4\" Install-BOM-AI-Online.bat install_unix.py | head"
+    - step: 9
+      action: "QC street test — run Section 7 matrix: Windows ≥12 tests, macOS ≥6, Linux ≥6; every row PASS or it does not ship"
+      verify: "matrix log + live-chat Han=0 evidence attached to the release ticket"
+    - step: 10
+      action: "ship (Section 8)"
+
+  base64_reencode_rules: |
+    - seedPayload is the ONLY payload this blueprint changes. gatewayPayload / policyPayload /
+      boundaryPayload / guardPayload / hf1Payload / auditPayload / catalogPayload stay byte-identical
+      (FORBIDDEN files untouched).
+    - Encode with [Convert]::ToBase64String([IO.File]::ReadAllBytes(path)) — UTF-8 bytes, no BOM juggling.
+    - Unix payload: never hand-edit the .sh/.command; regenerate via build_installers.py.
+    - After either re-embed, sha256 the source file and assert the decoded payload hash matches.
+
+  testing_procedure: "Section 7 matrix, in order, on real machines (win10/11 x64, macOS 13+ arm64+x86_64, Ubuntu 22.04+). QC isolation on Windows uses BOMAI_QC=1 + BOMAI_ROOT_OVERRIDE (ports 18080/18888/11436) so a production install on the same box is never disturbed."
+
+# ════════════════════════════════════════════════════════════════════════════
+# SECTION 7: QC TEST MATRIX
+# ════════════════════════════════════════════════════════════════════════════
+section_7_qc_test_matrix:
+
+  windows:
+    - {id: W-T1,  name: "fresh install clean machine", steps: "run BAT → complete wizard", expect: "RC=0, status=COMPLETE, http://127.0.0.1:8080 200, install.json schema=2, version=2.0.4"}
+    - {id: W-T2,  name: "same-version re-run", steps: "run BAT again", expect: "installed page → Update/Repair → reused_verified_existing, RC=0, no downloads, chats intact", verify: "findstr reused logs\\install-2.0.4.log"}
+    - {id: W-T3,  name: "re-run with disk <30GB (FIX-07)", steps: "fill drive or lower $PIN.diskNeededGB in a test build", expect: "verify-only path RC=0 (no E-DISK)"}
+    - {id: W-T4,  name: "uninstall defaults", steps: "installed page → uninstall → confirm", expect: "ports 8080/8888/11435 free, releases+cache+state+logs gone, shortcuts gone, data/ KEPT, Ollama KEPT", verify: "Get-NetTCPConnection -LocalPort 8080 → empty"}
+    - {id: W-T5,  name: "uninstall + remove-data", expect: "data/ gone", verify: "Test-Path <root>\\data → False"}
+    - {id: W-T6,  name: "uninstall + remove-models + remove-ollama (we installed Ollama)", expect: "4 bomai aliases gone, unins000 ran, Ollama dir gone, empty store removed"}
+    - {id: W-T7,  name: "foreign Ollama protection", steps: "preinstall Ollama + pull llama3.2 → install BOM AI → uninstall with all opt-ins", expect: "Ollama KEPT, llama3.2 listed by ollama list, only bomai-* aliases removed"}
+    - {id: W-T8,  name: "stuck process (req 1.2)", steps: "install → kill open-webui child only, leave wrapper → uninstall", expect: "log shows auto-stop lines, ports freed, uninstall completes RC=0"}
+    - {id: W-T9,  name: "console adopts pointer (FIX-08)", steps: "GUI install to D:\\BOMAI → run 'Install-BOM-AI-Online.bat console'", expect: "log 'adopted install root from pointer: D:\\BOMAI'; no second tree"}
+    - {id: W-T10, name: "Pro tier preserved (FIX-04)", steps: "install Pro → rerun → Update/Repair", expect: "Pro radio pre-checked; result tier=pro; bomai-pro alias"}
+    - {id: W-T11, name: "mutex race (FIX-01b)", steps: "start console install; during S7 run uninstall", expect: "uninstall E-MUTEX immediately; install unaffected"}
+    - {id: W-T12, name: "ollama series accept (FIX-06)", steps: "machine with ollama 0.40.11 → install", expect: "accepted with log; runtime.json expected_version=0.40.11; chat works"}
+    - {id: W-T13, name: "version display (FIX-10)", steps: "install → rerun", expect: "'BOM AI v2.0.4 ติดตั้งอยู่ที่ <root>' (no path in version slot)"}
+    - {id: W-T14, name: "upgrade 2.0.3 → 2.0.4", steps: "install 2.0.3 release build, chat once, then run 2.0.4 BAT → Update/Repair", expect: "chats+login preserved (same dataDir), gateway_key unchanged, shortcuts point at 2.0.4 release, old build kept as rollback"}
+
+  macos:
+    - {id: M-T1, name: "fresh install", expect: "exit 0, state/install-verification.json status=CONFIG_VERIFIED, :8080 serves"}
+    - {id: M-T2, name: "re-run (repair)", expect: "idempotent; tier from runtime.json; chats intact; seed PRESERVE keys unchanged (set web.search.result_count=5 first, stays 5)"}
+    - {id: M-T3, name: "--uninstall defaults", expect: "ports free; ~/Desktop/BOM AI.command + LaunchAgents plist removed (launchctl print gui/$UID/app.bomai.local → not found); data/ kept"}
+    - {id: M-T4, name: "--uninstall --remove-data --remove-models --remove-ollama", expect: "root tree gone; bomai aliases gone; system ollama (if any) untouched"}
+    - {id: M-T5, name: "stale pid + busy port (FIX-01 unix)", steps: "delete state/*.pid while running → --uninstall", expect: "lsof owner found, stopped, no 'unowned service' error"}
+    - {id: M-T6, name: "pointer adopt (FIX-08)", steps: "install --root /tmp/bomai-x → re-run plain .command", expect: "aborts naming /tmp/bomai-x; with --root /tmp/bomai-x → resumes"}
+
+  linux:
+    - {id: L-T1, name: "fresh install (Ubuntu 22.04)", expect: "exit 0, CONFIG_VERIFIED, :8080 serves"}
+    - {id: L-T2, name: "re-run repair", expect: "idempotent; PRESERVE keys kept"}
+    - {id: L-T3, name: "--uninstall defaults", expect: ".desktop + autostart removed; ports free; data kept"}
+    - {id: L-T4, name: "--uninstall all opt-ins", expect: "root gone incl. <root>/ollama; /usr/local/bin/ollama + /usr/share/ollama untouched"}
+    - {id: L-T5, name: "stuck process", steps: "kill -STOP the owui child; --uninstall", expect: "SIGTERM→SIGKILL path logged; ports freed"}
+    - {id: L-T6, name: "pointer adopt", expect: "same as M-T6"}
+
+  live_chat_han0:
+    purpose: "street-proof the whole chain (gateway → model → Han guard) after any install/reinstall/upgrade"
+    steps: |
+      1. Open http://127.0.0.1:8080, sign in (first-login.json creds).
+      2. Send Thai prompt: "สวัสดี แนะนำตัวหน่อย แล้วบอกวิธีดูราคาทองวันนี้" — expect Thai answer, suggests web search.
+      3. Toggle search on, send: "ทองคำวันนี้ราคาเท่าไหร่" — expect Thai answer with search results.
+      4. Han check on every assistant reply (browser console or saved text):
+         python -c "import sys,unicodedata; t=open('reply.txt',encoding='utf8').read(); print(sum('CJK' in unicodedata.name(c,'') for c in t))"
+         → MUST print 0 (Han=0). Any >0 = FAIL, do not ship.
+    image_attachment:
+      - "attach a chart/photo PNG in chat, send 'รูปนี้คืออะไร อธิบายเป็นภาษาไทย' → Thai description returned, Han=0, no console error in logs\\owui-err.log"
+
+# ════════════════════════════════════════════════════════════════════════════
+# SECTION 8: SHIP CHECKLIST
+# ════════════════════════════════════════════════════════════════════════════
+section_8_ship_checklist:
+  github_release:
+    - "confirm repo siamcafe/bomai clean; tag v2.0.4"
+    - "gh release create v2.0.4 Install-BOM-AI-Online.bat install-bom-ai-linux.sh install-bom-ai-mac.zip --title 'BOM AI 2.0.4' --notes <release notes: reinstall-safe, real uninstaller, 3 OS>"
+    - "publish sha256sums.txt of the 3 assets in the notes"
+  bomai_app_update:
+    - "update download links + version strings on bomai.app to 2.0.4"
+    - "confirm https://bomai.app/dl/online/ small-file channel files UNCHANGED (bom_runtime_r2.py, models.json — forbidden files, same SHAs as $PIN)"
+  huggingface:
+    - "NO-OP for 2.0.4: model pins unchanged (siamcafe/bom-ai:light-v2.0.0 / pro-v2.0.0, layer SHAs unchanged) — verify both tags still resolve publicly; edit model card ONLY to mention installer 2.0.4"
+  post_ship_verification:
+    - "clean VM per OS → install from the PUBLISHED urls (not local files) → W-T1/M-T1/L-T1 + live_chat_han0 + image_attachment"
+    - "upgrade path from the published 2.0.3 → 2.0.4 on a machine with real chats (W-T14)"
+    - "hub joblog: status DONE with matrix results artifact pushed to _ops/reports/bomai/ (dual-write rule)"
+
+open_questions_for_owner: []
+residual_risks:
+  - "unins000.exe location for non-default Ollama installs (per-machine /admin install) — resolver checks %LOCALAPPDATA% path only; admin installs are out of the street-user profile and are kept (safe side)."
+  - "taskbar-pinned shortcuts are explorer-owned copies; documented as manual removal."
+  - "install_unix.py fast verify-only path intentionally not added in 2.0.4 (idempotent full re-run is acceptable; keeps the change surface minimal)."
+recommendation: accept

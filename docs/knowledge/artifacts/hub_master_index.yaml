@@ -1,0 +1,169 @@
+project: bomai
+version: 2.0.3
+status: COMPLETE
+updated: 2026-11-07
+description: "BOM AI v2.0.3 SHIPPED VERIFIED STABLE — master index of all hub artifacts"
+
+# ========================================
+# PRIORITY 1 — CURRENT STATE (read first)
+# ========================================
+current:
+  ship_report:
+    art: 56626
+    desc: "v2.0.3 SHIPPED VERIFIED — Han=0, T01-T20 ALL PASS, 3 OS, 4 channels"
+  atom_survey:
+    art: 56602
+    desc: "Grok xhigh 53 findings — master survey of entire project"
+  backup:
+    art: 56740
+    desc: "Backup report — 43 files to GitHub tag v2.0.3-backup + NAS"
+  street_test:
+    art: 56796
+    desc: "Browser street test final — B1-B3 fixed, 50 prompts, 31P/14W/0F"
+  csp_fix:
+    art: 56807
+    desc: "CSP unsafe-eval fixed — CASE B standalone, Alpine nav working"
+  cleanup:
+    art: 56703
+    desc: "Cleanup — QC sandbox + AppData + old releases, 8GB freed"
+
+# ========================================
+# PRIORITY 2 — BLUEPRINTS & GOD CONFIG
+# ========================================
+blueprints:
+  god_config_v90:
+    art: 55651
+    desc: "GOD CONFIG v9.0 LOCKED — sampling params, system prompt"
+  god_blueprint_v52:
+    art: 55907
+    desc: "GOD BLUEPRINT v5.2 — performance tuning"
+  god_howto_v42:
+    art: 55908
+    desc: "GOD HOW-TO v4.2 — deployment guide"
+  k3_god_blueprint_hf10:
+    art: 56535
+    desc: "K3 GOD BLUEPRINT Han Fix HF-1.0 — full scripts, test matrix T01-T20"
+  codex_blueprint_hf10:
+    art: 56495
+    desc: "Codex GOD BLUEPRINT HF-1.0 — intermediate draft"
+  claude_blueprint_hf10:
+    art: 56482
+    desc: "Claude Han Fix blueprint draft — initial analysis"
+
+# ========================================
+# PRIORITY 3 — FIX SPECS & REPORTS
+# ========================================
+atom_fixes:
+  round1:
+    spec: 56640
+    report: 56648
+    desc: "9 FIXED — F005 F008 F025 F026 F027 F030 F031 F032 F034 F044 F045"
+  round2:
+    spec: 56652
+    report: 56671
+    desc: "GH Latest + Mac bomai-safe + ubuntu-ai ollama auto-start"
+  round3:
+    spec: 56674
+    report: 56678
+    desc: "Mac Ollama loopback + Italian locale removed"
+  web_bugs:
+    spec: 56741
+    report: 56796
+    desc: "Download picker + homepage version + Italian menu + E:\ clean + 50 prompts"
+  csp:
+    spec: 56801
+    report: 56807
+    desc: "CSP unsafe-eval via CASE B DA-safe method"
+  cleanup:
+    spec: 56696
+    report: 56703
+    desc: "QC sandbox + AppData + old releases + temp files"
+
+# ========================================
+# PRIORITY 4 — QC & TESTING
+# ========================================
+testing:
+  qc_live_full:
+    spec: 56388
+    report: 56397
+    desc: "QC Live Full v2.0.2 — 24P/1S/0F"
+  stress_550:
+    spec: 56442
+    report: 56477
+    desc: "Stress test 550 prompts — found 4 Han leaks (pre-fix)"
+  final_qc:
+    spec: 56540
+    report: 56566
+    desc: "Han Fix + Linux + macOS QC — Han=0, 12P/8PARTIAL"
+  street_test_initial:
+    spec: 56710
+    report: 56730
+    desc: "Browser street test initial — 3P/4F/55 BLOCKED"
+  street_test_final:
+    spec: 56741
+    report: 56796
+    desc: "Browser street test final — 31P/14W/0F"
+  backup:
+    spec: 56715
+    report: 56740
+    desc: "Backup critical to GitHub + NAS"
+
+# ========================================
+# PRIORITY 5 — SHIP SPECS
+# ========================================
+ship:
+  v203_ship:
+    spec: 56568
+    report: 56626
+    desc: "Ship HF-1 v2.0.3 — 9 phases, 30 days authorized"
+  fix_f1f2:
+    spec: 56402
+    report: 56407
+    desc: "Fix GitHub+HF stale BAT mirrors"
+
+# ========================================
+# PRIORITY 6 — HANDOFFS
+# ========================================
+handoffs:
+  vdo_manual:
+    art: 56460
+    desc: "Manual rewrite 9 pages → project VDO"
+  bomllm:
+    art: 56812
+    desc: "v2.0.3 update → project BOMLLM (GitHub+HF+fleet)"
+
+# ========================================
+# PRIORITY 7 — CONTEXT & SUPPORT
+# ========================================
+context:
+  stress_context:
+    art: 56419
+    desc: "Stress test context doc"
+  linux_qc_context:
+    art: 56470
+    desc: "Linux QC context"
+  macos_qc_context:
+    art: 56476
+    desc: "macOS QC context"
+  grav_emergency:
+    art: 56642
+    desc: "Grav 403 emergency survey (handed to project WEB)"
+  screenshots:
+    art: 56732
+    desc: "Street test screenshots bundle"
+    art2: 56809
+    desc2: "Menu open screenshot"
+    art3: 56810
+    desc3: "Download picker screenshot v2.0.3"
+
+# ========================================
+# SUPERSEDED (reference only)
+# ========================================
+superseded:
+  - { art: 56424, desc: "Stress test v1 WRONG target C2 → replaced by 56442" }
+  - { art: 56457, desc: "Handoff manual Windows-only → replaced by 56460" }
+  - { art: 56474, desc: "Linux QC spec → merged into 56540" }
+  - { art: 56480, desc: "macOS QC spec → merged into 56540" }
+  - { art: 56536, desc: "Han Fix zcode spec → merged into 56540" }
+  - { art: 56641, desc: "Grav emergency v1 → replaced by 56642" }
+  - { art: 56800, desc: "CSP fix v1 → replaced by 56801" }

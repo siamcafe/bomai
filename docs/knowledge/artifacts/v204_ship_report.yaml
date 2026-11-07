@@ -1,0 +1,88 @@
+project: bomai
+step: deploy_ship_v204
+status: PASS
+date: 2026-11-07T14:20:00Z
+executor: zcode (GLM-5.3)
+
+phase0_verify:
+  bat_sha_match: true
+  sh_sha_match: true
+  mac_sha_match: true
+  evidence:
+    - "certutil Install-BOM-AI-Online.bat = 58b21b88aec9c019be6fb0d92cf39e80da9baaf0be0c1de1d542d995ecb4155a (size 435282)"
+    - "certutil install-bom-ai-linux.sh = a55f3a20d203a4e4bb6c7461e2aaa4f1052c27972c55ce4605e7a16dc32f9ff4 (size 92856)"
+    - "certutil install-bom-ai-mac.zip = 6daa6b508cdf936b0b4cae3d6a1d2307c1ef17149d24efabd8052fa9b7f418ba (size 69914)"
+  joblog_running: "hub job id=20210"
+
+phase1_github:
+  release_created: true
+  tag: v2.0.4
+  assets_count: 3
+  marked_latest: true
+  release_url: https://github.com/siamcafe/bomai/releases/tag/v2.0.4
+  evidence:
+    - "gh release create OK; assets sizes 435282/92856/69914 match source files"
+    - "api.github.com/repos/siamcafe/bomai/releases/latest -> tag=v2.0.4 assets=3 draft=False prerelease=False"
+
+phase2_bomai_app:
+  files_uploaded: true
+  release_json_updated: true
+  release_json_3_match: true
+  homepage_version: "2.0.4"
+  download_links_200: true
+  evidence:
+    - "CAT dl/ installers curl-from-GitHub, sha256sum = 58b21b88/a55f3a20/6daa6b50 ALL MATCH"
+    - "release.json v2.0.4 sha 84f6038e38f055a2cf57089b35f39c037992679e2b18441e2b7598c69b0ae4a9 identical in dl/, public_html/dl/, public_html/ (3 copies)"
+    - "https://bomai.app/release.json -> version 2.0.4 + new SHAs + sizes; HTTP 200 len 1243"
+    - "homepage hero: https://bomai.app/th -> 'เวอร์ชัน 2.0.4'; /en -> 'Version 2.0.4' (user/config/themes/bomai.yaml release_version)"
+    - "download page /th/download data-dl-config: version 2.0.4, sha 58b21b88/6daa6b50/a55f3a20 (16 lang files updated)"
+    - "HEAD bomai.app/dl/<3 files> -> HTTP 200 Content-Length 435282/92856/69914 exact"
+    - "dl/online pins UNCHANGED: bom_runtime_r2.py a73547c9dbac5a1a..., models.json 74d063c946426f0b... (before == after)"
+    - "ownership chown siamcar:siamcar OK on all touched files"
+
+phase3_post_ship:
+  github_download_sha_match: true
+  bomai_app_download_200: true
+  github_latest_tag: v2.0.4
+  evidence:
+    - "fresh curl github .../releases/download/v2.0.4/<3 files> -> sha 58b21b88/a55f3a20/6daa6b50 ALL MATCH"
+    - "fresh curl bomai.app/dl/<3 files> -> sha 58b21b88/a55f3a20/6daa6b50 ALL MATCH"
+    - "CAT-side fresh download from GitHub during deploy also matched (second machine)"
+
+huggingface:
+  card_updated: true
+  card_commit: https://huggingface.co/siamcafe/bomai/commit/41485ddc7f13d69bc86ea6c2e4673c6ab61154ed
+  model_pins: UNCHANGED (NO-OP per blueprint Section 8)
+  tags_resolve: "ollama.com/siamcafe/bom-ai/tags -> :light-v2.0.0 + :pro-v2.0.0 both present; HF model 200"
+  note: "HF repo installer files + release.json left at v2.0.3 per spec NO-OP (edit card only); card marks them 'v2.0.3 archive'"
+
+files_changed:
+  github:
+    - "release v2.0.4 created with 3 assets + notes incl. SHA-256 (v2.0.3 release untouched)"
+  cat_bomai_app:
+    - "dl/Install-BOM-AI-Online.bat, dl/install-bom-ai-linux.sh, dl/install-bom-ai-mac.zip (v2.0.3 -> v2.0.4)"
+    - "dl/release.json + public_html/dl/release.json + public_html/release.json (v2.0.4, schema preserved)"
+    - "user/config/themes/bomai.yaml release_version 2.0.3 -> 2.0.4"
+    - "user/pages/02.download/default*.md x16: version + installer_sha256_{windows,mac,linux}"
+    - "cache/compiled + cache/twig cleared (Grav regenerates)"
+  huggingface:
+    - "siamcafe/bomai README.md model card -> v2.0.4"
+
+backups_created:
+  - "CAT dl/release.json.bak-v203 (pre-change v2.0.3 release.json)"
+  - "CAT dl/{3 installers}.bak_20261107T141528Z (pre-change v2.0.3 binaries)"
+  - "CAT user/config/themes/bomai.yaml.bak_20261107T141757Z"
+  - "CAT user/pages/02.download/default*.md.bak_20261107T141757Z x16"
+  - "hub artifacts 57411/57412/57413 (QC-verified sources, untouched)"
+
+rollback:
+  - "cp dl/release.json.bak-v203 over the 3 release.json copies"
+  - "cp dl/<installer>.bak_20261107T141528Z back over dl/<installer>"
+  - "cp user/config/themes/bomai.yaml.bak_20261107T141757Z user/config/themes/bomai.yaml"
+  - "cp user/pages/02.download/<f>.bak_20261107T141757Z back per file; clear Grav cache"
+
+residual_risks:
+  - "HF-hosted installers + release.json remain v2.0.3 (spec NO-OP). Any consumer pulling release.json from HF instead of bomai.app sees 2.0.3. Primary channels (bomai.app, GitHub) are 2.0.4."
+  - "Clean-VM install tests (blueprint post_ship W-T1/M-T1/L-T1) not re-run this lane; QC-verified artifacts shipped as-is per spec."
+
+recommendation: accept
