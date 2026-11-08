@@ -7,7 +7,7 @@
 
 [เว็บไซต์ bomai.app](https://bomai.app) · [ดาวน์โหลด](https://bomai.app/download) · [คู่มือฉบับเต็ม](README.th.md) · [English](README.en.md)
 
-[![Download](https://img.shields.io/badge/download-bomai.app-blue)](https://bomai.app/download) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE) ![Version](https://img.shields.io/badge/version-v2.0.3-orange)
+[![Download](https://img.shields.io/badge/download-bomai.app-blue)](https://bomai.app/download) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE) ![Version](https://img.shields.io/badge/version-v2.0.8-orange)
 
 ## ✨ ความสามารถ
 
@@ -94,6 +94,19 @@ unzip install-bom-ai-mac.zip && bash install-bom-ai-mac.command
 - คำถามที่พบบ่อย วิธีถอนการติดตั้ง และเทคนิคการใช้งาน อยู่ในคู่มือ
 
 ## 🗒️ บันทึกการอัปเดต
+
+### v2.0.8 — Shared Infrastructure Update (2026-11-08)
+
+อัปเดตโครงสร้างพื้นฐานที่ใช้ร่วมกับ [BOM LLM v17.0.0](https://github.com/siamcafe/bomllm) — ตัว BOM AI เองและพารามิเตอร์ GOD CONFIG ไม่เปลี่ยนแปลง:
+
+- **Open WebUI v0.13.0 → v0.13.2** (coding agents, saved side chats, comments, notifications)
+- **LiteLLM v1.108.3 LTS** (cosign verified)
+- **Valkey 9.1.3** — แก้ช่องโหว่ heap overflow
+- **Contabo C2 live-migrated** — disk latency 133ms → 4ms (ดีขึ้น 90%)
+- **bomai-safe generation ตรวจซ้ำหลังอัปเดตทุกครั้ง** — ผ่านทุกครั้ง
+- **GOD CONFIG v11 unchanged**
+
+> หมายเหตุเวอร์ชัน: tag v2.0.4–v2.0.7 ถูกจองไว้ที่ commit backup เดิม (2026-11-06) จึงใช้ v2.0.8 เป็น release ถัดไป
 
 ### v2.0.3 — Han Fix 3-Layer HF-1.0 (2026-11-06)
 
