@@ -7,7 +7,7 @@
 
 [เว็บไซต์ bomai.app](https://bomai.app) · [ดาวน์โหลด](https://bomai.app/download) · [คู่มือฉบับเต็ม](README.th.md) · [English](README.en.md)
 
-[![Download](https://img.shields.io/badge/download-bomai.app-blue)](https://bomai.app/download) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE) ![Version](https://img.shields.io/badge/version-v2.1.2-orange)
+[![Download](https://img.shields.io/badge/download-bomai.app-blue)](https://bomai.app/download) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE) ![Version](https://img.shields.io/badge/version-v2.1.3-orange)
 
 ## ✨ ความสามารถ
 
@@ -19,7 +19,7 @@
 
 ## 🛡️ ผลทดสอบจริง — Han Fix 3-Layer (HF-1.0)
 
-**ระบบบังคับใช้ 3 ชั้น (3-Layer enforcement) ใน v2.1.2:**
+**ระบบบังคับใช้ 3 ชั้น (3-Layer enforcement) ใน v2.1.3:**
 
 | ด่านตรวจ | ผลที่วัดได้จริง |
 |---|---|
@@ -31,28 +31,28 @@
 
 > Han Fix 3-Layer enforcement: 0 Han leaks across 550+ test prompts — วัดจาก build จริงที่แจก ไม่ใช่คำกล่าวอ้าง
 
-## 🚀 ติดตั้ง 1 คลิก (v2.1.2)
+## 🚀 ติดตั้ง 1 คลิก (v2.1.3)
 
-ดาวน์โหลดจาก GitHub Release [v2.1.2](https://github.com/siamcafe/bomai/releases/tag/v2.1.2):
+ดาวน์โหลดจาก GitHub Release [v2.1.3](https://github.com/siamcafe/bomai/releases/tag/v2.1.3):
 
 ### Windows (PowerShell)
 ```powershell
 # ตัวติดตั้งออนไลน์ 2.2 MB (SHA-256: d569c950) — ดึง component เองเมื่อรัน
-Invoke-WebRequest -Uri "https://github.com/siamcafe/bomai/releases/download/v2.1.2/Install-BOM-AI-Online.bat" -OutFile "Install-BOM-AI-Online.bat"
+Invoke-WebRequest -Uri "https://github.com/siamcafe/bomai/releases/download/v2.1.3/Install-BOM-AI-Online.bat" -OutFile "Install-BOM-AI-Online.bat"
 .\Install-BOM-AI-Online.bat
 ```
 
 ### Linux
 ```bash
 # 1.2 MB (SHA-256: 48a611e1)
-curl -fsSL -o install-bom-ai-linux.sh https://github.com/siamcafe/bomai/releases/download/v2.1.2/install-bom-ai-linux.sh
+curl -fsSL -o install-bom-ai-linux.sh https://github.com/siamcafe/bomai/releases/download/v2.1.3/install-bom-ai-linux.sh
 bash install-bom-ai-linux.sh
 ```
 
 ### macOS
 ```bash
 # 908 KB (SHA-256: 57f5603f)
-curl -fsSL -o install-bom-ai-mac.zip https://github.com/siamcafe/bomai/releases/download/v2.1.2/install-bom-ai-mac.zip
+curl -fsSL -o install-bom-ai-mac.zip https://github.com/siamcafe/bomai/releases/download/v2.1.3/install-bom-ai-mac.zip
 unzip install-bom-ai-mac.zip && bash install-bom-ai-mac.command
 ```
 
