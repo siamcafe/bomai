@@ -6,6 +6,8 @@
 
 [bomai.app](https://bomai.app) · [Download](https://bomai.app/download) · [ภาษาไทย](README.th.md)
 
+[![Download](https://img.shields.io/badge/download-bomai.app-blue)](https://bomai.app/download) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE) ![Version](https://img.shields.io/badge/version-v2.1.7-orange)
+
 ## What is BOM AI?
 
 - One-click installer: bundles [Ollama](https://ollama.com) + [Open WebUI](https://openwebui.com) + curated Thai VL (vision-language) models
@@ -20,39 +22,65 @@ on an 8 GB office PC with the internet unplugged.
 
 ## Model Tiers
 
-| Tier | RAM | Download | Capabilities |
-|------|-----|----------|--------------|
-| V4B | 8 GB | ~2.5 GB | Thai chat, image reading, Q&A, short translation |
-| V8B | 16 GB | ~5 GB | Everything V4B + document translation, longer documents |
-| V12B | 24 GB+ | ~7.3 GB | Full capability: charts, tables, complex vision tasks |
+| Tier | Model | Requirements | Download | Capabilities |
+|------|-------|--------------|----------|--------------|
+| Light | Qwen3.5 4B VL (Q4_K_M) | 8 GB RAM, runs on CPU | ~3.4 GB | Thai chat, image reading, Q&A, short translation |
+| Pro | GLM-4.7 12B Q4_K_M | GPU with 12 GB+ VRAM | ~7.9 GB | Everything Light + long documents, translation, highest quality |
 
 The installer detects your RAM + VRAM and recommends the right tier automatically.
 You can always override the choice.
 
 ## Quick Start
 
-1. Download from [bomai.app/download](https://bomai.app/download)
-2. Run the installer — it detects your hardware and picks the right model
-3. Click the **BOM AI** icon — a chat window opens in your browser, in Thai
+Download from [bomai.app/download](https://bomai.app/download) or the
+[GitHub release v2.1.7](https://github.com/siamcafe/bomai/releases/tag/v2.1.7):
 
-Everything binds to `127.0.0.1` only (UI on port 8787, Ollama on port 11434).
+### Windows (PowerShell)
+
+```powershell
+# Online installer, 2.2 MB (SHA-256: 6c1f9a77) — fetches components when run
+Invoke-WebRequest -Uri "https://github.com/siamcafe/bomai/releases/download/v2.1.7/Install-BOM-AI-Online.bat" -OutFile "Install-BOM-AI-Online.bat"
+.\Install-BOM-AI-Online.bat
+```
+
+### Linux
+
+```bash
+# 1.3 MB (SHA-256: 50009487)
+curl -fsSL -o install-bom-ai-linux.sh https://github.com/siamcafe/bomai/releases/download/v2.1.7/install-bom-ai-linux.sh
+bash install-bom-ai-linux.sh
+```
+
+### macOS
+
+```bash
+# 1 MB (SHA-256: 830057b4)
+curl -fsSL -o install-bom-ai-mac.zip https://github.com/siamcafe/bomai/releases/download/v2.1.7/install-bom-ai-mac.zip
+unzip install-bom-ai-mac.zip && bash install-bom-ai.command
+```
+
+Then run the installer — it detects your hardware and picks the right model —
+and click the **BOM AI** icon: a chat window opens in your browser, in Thai.
+
+Everything binds to `127.0.0.1` only (UI on port 8080, AI gateway on port 11435).
 Nothing listens on the network.
 
 ## System Requirements
 
 - Windows 10 (1903)+, macOS 12+, or Ubuntu 22.04+
-- Minimum 8 GB RAM (V4B); 16 GB recommended (V8B)
+- Minimum 8 GB RAM (Light tier, CPU); GPU with 12 GB+ VRAM for the Pro tier
 - ~10 GB free disk space
 - No internet needed after install
 
 ## How It Works
 
-- **VL models**: QLoRA fine-tunes (r64 / alpha 128, bf16) of open vision-language
-  base models on Thai instruction data, exported to GGUF and served by Ollama
+- **VL models**: curated Thai-capable vision-language models served by
+  [Ollama](https://ollama.com). The current Light model (v2.1.7) uses the
+  untouched official Qwen3.5-4B weights (`siamcafe/bom-ai:light-v2.1.7`)
 - **Vision**: the models read Thai text inside images — receipts, signs,
   screenshots, charts
-- **Hardware detection**: a small per-OS script probes RAM + VRAM and maps it to
-  a model tier before anything downloads (see `installer/`)
+- **Hardware detection**: the installer probes RAM + VRAM and maps it to
+  a model tier before anything downloads
 - **Stack**: [Ollama](https://ollama.com) (model serving) + [Open WebUI](https://openwebui.com)
   (chat interface, BSD-3-Clause) + our installer scripts and configs (this repo)
 
@@ -72,8 +100,8 @@ what you downloaded.
 Only for the initial download and install. After that, BOM AI works fully offline.
 
 **Does it run on old computers?**
-Yes. Any Windows/macOS/Linux machine with 8 GB RAM runs the V4B model; 16 GB
-suits V8B; 24 GB+ gets V12B.
+Yes. Any Windows/macOS/Linux machine with 8 GB RAM runs the Light model on CPU;
+a GPU with 12 GB+ VRAM unlocks the Pro model.
 
 **Can I use it on mobile?**
 Not in this version — BOM AI is designed for desktop computers.
@@ -89,6 +117,20 @@ Nowhere. All chats and images are stored only on your computer, and you can
 delete them at any time.
 
 ## Release Notes
+
+### v2.1.7 (2026-11-13)
+
+- **New Light model** — the untouched official Qwen3.5-4B weights
+  (`siamcafe/bom-ai:light-v2.1.7`), which read chart and screenshot images
+  clearly better than the previous Light model
+- **Streaming fix** — if the model slips into Chinese characters while
+  streaming, the BOM AI gateway continues the answer from its last clean
+  sentence instead of cutting it
+- **Known trade-offs** — answers are slower on CPU-only PCs and the model
+  refuses a few more questions; existing installs download the new model once
+  (about 3.4 GB)
+- Installers: Windows ~2.2 MB (`6c1f9a77`) · Linux ~1.3 MB (`50009487`) ·
+  macOS ~1 MB (`830057b4`)
 
 ### v0.3.2 (2026-10-30)
 
