@@ -37,21 +37,21 @@
 
 ### Windows (PowerShell)
 ```powershell
-# ตัวติดตั้งออนไลน์ 2.2 MB (SHA-256: d569c950) — ดึง component เองเมื่อรัน
+# ตัวติดตั้งออนไลน์ 2.2 MB (SHA-256: 6c1f9a77) — ดึง component เองเมื่อรัน
 Invoke-WebRequest -Uri "https://github.com/siamcafe/bomai/releases/download/v2.1.7/Install-BOM-AI-Online.bat" -OutFile "Install-BOM-AI-Online.bat"
 .\Install-BOM-AI-Online.bat
 ```
 
 ### Linux
 ```bash
-# 1.2 MB (SHA-256: 48a611e1)
+# 1.2 MB (SHA-256: 50009487)
 curl -fsSL -o install-bom-ai-linux.sh https://github.com/siamcafe/bomai/releases/download/v2.1.7/install-bom-ai-linux.sh
 bash install-bom-ai-linux.sh
 ```
 
 ### macOS
 ```bash
-# 908 KB (SHA-256: 57f5603f)
+# 908 KB (SHA-256: 830057b4)
 curl -fsSL -o install-bom-ai-mac.zip https://github.com/siamcafe/bomai/releases/download/v2.1.7/install-bom-ai-mac.zip
 unzip install-bom-ai-mac.zip && bash install-bom-ai-mac.command
 ```
