@@ -6,7 +6,7 @@
 
 [bomai.app](https://bomai.app) · [Download](https://bomai.app/download) · [ภาษาไทย](README.th.md)
 
-[![Download](https://img.shields.io/badge/download-bomai.app-blue)](https://bomai.app/download) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE) ![Version](https://img.shields.io/badge/version-v2.1.7-orange)
+[![Download](https://img.shields.io/badge/download-bomai.app-blue)](https://bomai.app/download) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE) ![Version](https://img.shields.io/badge/version-v2.1.8-orange)
 
 ## What is BOM AI?
 
@@ -22,10 +22,20 @@ on an 8 GB office PC with the internet unplugged.
 
 ## Model Tiers
 
-| Tier | Model | Requirements | Download | Capabilities |
-|------|-------|--------------|----------|--------------|
-| Light | Qwen3.5 4B VL (Q4_K_M) | 8 GB RAM, runs on CPU | ~3.4 GB | Thai chat, image reading, Q&A, short translation |
-| Pro | GLM-4.7 12B Q4_K_M | GPU with 12 GB+ VRAM | ~7.9 GB | Everything Light + long documents, translation, highest quality |
+| Tier | Model | Format | Download | Requirements / Capabilities |
+|------|-------|--------|----------|------------------------------|
+| 🟢 Light | BOM AI 4B VL (Qwen3.5-4B base) | GGUF Q4_K_M | ~3.4 GB | 8 GB RAM, runs on CPU — Thai chat, image reading, Q&A, short translation |
+| 🔵 Pro | 709-L 27B DavidAU Cold Fusion (Qwen3.8 base) | GGUF Q4_K_M | ~17 GB (text 16.5 GB + mmproj 518 MB) | Windows / macOS / Linux — everything Light + long documents, translation, highest quality |
+
+Since v2.1.8 the Pro tier ships as **GGUF Q4_K_M for every platform** (previously
+Apple-Silicon-only). Pro model file SHA-256: text `5c45be04` · mmproj `d6bb4695`.
+
+Already running Ollama? Pull the models directly:
+
+```bash
+ollama pull siamcafe/bom-ai:light-v2.1.8
+ollama pull siamcafe/bom-ai:pro-v2.1.8
+```
 
 The installer detects your RAM + VRAM and recommends the right tier automatically.
 You can always override the choice.
@@ -33,30 +43,30 @@ You can always override the choice.
 ## Quick Start
 
 Download from [bomai.app/download](https://bomai.app/download) or the
-[GitHub release v2.1.7](https://github.com/siamcafe/bomai/releases/tag/v2.1.7):
+[GitHub release v2.1.8](https://github.com/siamcafe/bomai/releases/tag/v2.1.8):
 
 ### Windows (PowerShell)
 
 ```powershell
-# Online installer, 2.2 MB (SHA-256: 6c1f9a77) — fetches components when run
-Invoke-WebRequest -Uri "https://github.com/siamcafe/bomai/releases/download/v2.1.7/Install-BOM-AI-Online.bat" -OutFile "Install-BOM-AI-Online.bat"
+# Online installer, 2.2 MB (SHA-256: 2a2e864c) — fetches components when run
+Invoke-WebRequest -Uri "https://github.com/siamcafe/bomai/releases/download/v2.1.8/Install-BOM-AI-Online.bat" -OutFile "Install-BOM-AI-Online.bat"
 .\Install-BOM-AI-Online.bat
 ```
 
 ### Linux
 
 ```bash
-# 1.3 MB (SHA-256: 50009487)
-curl -fsSL -o install-bom-ai-linux.sh https://github.com/siamcafe/bomai/releases/download/v2.1.7/install-bom-ai-linux.sh
+# 1.3 MB (SHA-256: eef9fc3c)
+curl -fsSL -o install-bom-ai-linux.sh https://github.com/siamcafe/bomai/releases/download/v2.1.8/install-bom-ai-linux.sh
 bash install-bom-ai-linux.sh
 ```
 
 ### macOS
 
 ```bash
-# 1 MB (SHA-256: 830057b4)
-curl -fsSL -o install-bom-ai-mac.zip https://github.com/siamcafe/bomai/releases/download/v2.1.7/install-bom-ai-mac.zip
-unzip install-bom-ai-mac.zip && bash install-bom-ai.command
+# 1 MB (SHA-256: a1c6d4d4)
+curl -fsSL -o install-bom-ai-mac.zip https://github.com/siamcafe/bomai/releases/download/v2.1.8/install-bom-ai-mac.zip
+unzip install-bom-ai-mac.zip && bash install-bom-ai-mac.command
 ```
 
 Then run the installer — it detects your hardware and picks the right model —
@@ -68,15 +78,17 @@ Nothing listens on the network.
 ## System Requirements
 
 - Windows 10 (1903)+, macOS 12+, or Ubuntu 22.04+
-- Minimum 8 GB RAM (Light tier, CPU); GPU with 12 GB+ VRAM for the Pro tier
-- ~10 GB free disk space
+- Minimum 8 GB RAM (Light tier, CPU); GPU with 12 GB+ VRAM (or Apple Silicon
+  with 32 GB+ unified memory) recommended for the Pro tier
+- ~10 GB free disk space (Light) / ~20 GB (Pro)
 - No internet needed after install
 
 ## How It Works
 
 - **VL models**: curated Thai-capable vision-language models served by
-  [Ollama](https://ollama.com). The current Light model (v2.1.7) uses the
-  untouched official Qwen3.5-4B weights (`siamcafe/bom-ai:light-v2.1.7`)
+  [Ollama](https://ollama.com). The current Light model (v2.1.8, same weights
+  as v2.1.7) uses the untouched official Qwen3.5-4B weights
+  (`siamcafe/bom-ai:light-v2.1.8`)
 - **Vision**: the models read Thai text inside images — receipts, signs,
   screenshots, charts
 - **Hardware detection**: the installer probes RAM + VRAM and maps it to
@@ -117,6 +129,23 @@ Nowhere. All chats and images are stored only on your computer, and you can
 delete them at any time.
 
 ## Release Notes
+
+### v2.1.8 (2026-11-14)
+
+- **Web Search default OFF** — fixed at all 3 layers (model preset + admin
+  default + builtin tools). Identity answers are no longer polluted or replaced
+  by web disclaimers; users can still enable search whenever needed
+- **Pro tier = GGUF Q4_K_M on every platform** — 709-L 27B DavidAU Cold Fusion
+  (text 16.5 GB SHA-256 `5c45be04` + mmproj 518 MB SHA-256 `d6bb4695`) now runs
+  on Windows / macOS / Linux, no longer Apple-Silicon-only
+- **Stream Resume (gateway rc3)** — cut streams are automatically continued
+  (up to 3 resumes); measured mid-answer cut rate **0/272** (down from 13.97%
+  on v2.1.6)
+- **New Ollama tags** — `siamcafe/bom-ai:light-v2.1.8` ·
+  `siamcafe/bom-ai:pro-v2.1.8` (same model weights as v2.1.7, no re-download)
+- Installers: Windows ~2.2 MB (`2a2e864c`) · Linux ~1.3 MB (`eef9fc3c`) ·
+  macOS ~1 MB (`a1c6d4d4`)
+- **GOD CONFIG v9.1 unchanged** — all locked sampling parameters identical
 
 ### v2.1.7 (2026-11-13)
 

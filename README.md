@@ -7,15 +7,19 @@
 
 [เว็บไซต์ bomai.app](https://bomai.app) · [ดาวน์โหลด](https://bomai.app/download) · [คู่มือฉบับเต็ม](README.th.md) · [English](README.en.md)
 
-[![Download](https://img.shields.io/badge/download-bomai.app-blue)](https://bomai.app/download) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE) ![Version](https://img.shields.io/badge/version-v2.1.7-orange)
+[![Download](https://img.shields.io/badge/download-bomai.app-blue)](https://bomai.app/download) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE) ![Version](https://img.shields.io/badge/version-v2.1.8-orange)
 
 ## ✨ ความสามารถ
 
-- 🇹🇭 **ภาษาไทยเป็นหลัก 100%** — ถาม-ตอบ อ่าน เขียน แปล ภาษาไทยได้เป็นธรรมชาติ
+- 🇹🇭 **ภาษาไทยระดับมืออาชีพ 100%** — ถาม-ตอบ อ่าน เขียน แปล เป็นธรรมชาติ **zero Chinese leakage** (GBNF grammar)
+- 👁️ **Vision อ่านรูปได้** — ใบเสร็จ สลิป เอกสาร ป้ายหน้าร้าน กราฟ ชาร์ต screenshot แนบมาถามได้ทันที
+- 🔍 **Web Search** — ค้นข้อมูลล่าสุดจาก SearXNG (ค่าเริ่มต้น**ปิด** เปิดใช้ได้ตามต้องการ)
+- 🧠 **Thinking Mode** — คิดวิเคราะห์ก่อนตอบ สำหรับโจทย์ซับซ้อน
+- 💬 **Stream Resume** — ข้อความไม่หาย ไม่ถูกตัดกลางประโยค (gateway rc3: อัตราตัด **0/272**)
 - 🔒 **ทำงานบนเครื่องคุณ 100%** — ทุกอย่างรันที่ local (127.0.0.1) แชทไม่ถูกส่งออกนอกเครื่องแม้แต่ไบต์เดียว
 - ⚡ **ติดตั้ง 1 คลิก** — Windows / macOS / Linux ตัวติดตั้งตรวจสเปกเครื่องแล้วเลือกโมเดลที่เหมาะสมให้อัตโนมัติ
 - 🚫 **ออฟไลน์ได้เต็มรูปแบบ** — ใช้เน็ตเฉพาะตอนติดตั้งครั้งแรก หลังจากนั้นตัดเน็ตก็คุยได้
-- 💚 **ฟรีไม่มีเงื่อนไข** — ไม่ต้องสมัครสมาชิก ไม่มีโฆษณา ไม่จำกัดจำนวนข้อความ ไม่มีการเก็บ/ขายข้อมูล
+- 💚 **ฟรีไม่มีเงื่อนไข** — ไม่ต้องสมัครสมาชิก ไม่มีโฆษณา ไม่จำกัดจำนวนข้อความ ไม่มี token limit ไม่มีการเก็บ/ขายข้อมูล
 
 ## 🛡️ ผลทดสอบจริง — Han Fix 3-Layer (HF-1.0)
 
@@ -31,28 +35,28 @@
 
 > Han Fix 3-Layer enforcement: 0 Han leaks across 550+ test prompts — วัดจาก build จริงที่แจก ไม่ใช่คำกล่าวอ้าง
 
-## 🚀 ติดตั้ง 1 คลิก (v2.1.7)
+## 🚀 ติดตั้ง 1 คลิก (v2.1.8)
 
-ดาวน์โหลดจาก GitHub Release [v2.1.7](https://github.com/siamcafe/bomai/releases/tag/v2.1.7):
+ดาวน์โหลดจาก GitHub Release [v2.1.8](https://github.com/siamcafe/bomai/releases/tag/v2.1.8):
 
 ### Windows (PowerShell)
 ```powershell
-# ตัวติดตั้งออนไลน์ 2.2 MB (SHA-256: 6c1f9a77) — ดึง component เองเมื่อรัน
-Invoke-WebRequest -Uri "https://github.com/siamcafe/bomai/releases/download/v2.1.7/Install-BOM-AI-Online.bat" -OutFile "Install-BOM-AI-Online.bat"
+# ตัวติดตั้งออนไลน์ 2.2 MB (SHA-256: 2a2e864c) — ดึง component เองเมื่อรัน
+Invoke-WebRequest -Uri "https://github.com/siamcafe/bomai/releases/download/v2.1.8/Install-BOM-AI-Online.bat" -OutFile "Install-BOM-AI-Online.bat"
 .\Install-BOM-AI-Online.bat
 ```
 
 ### Linux
 ```bash
-# 1.2 MB (SHA-256: 50009487)
-curl -fsSL -o install-bom-ai-linux.sh https://github.com/siamcafe/bomai/releases/download/v2.1.7/install-bom-ai-linux.sh
+# 1.3 MB (SHA-256: eef9fc3c)
+curl -fsSL -o install-bom-ai-linux.sh https://github.com/siamcafe/bomai/releases/download/v2.1.8/install-bom-ai-linux.sh
 bash install-bom-ai-linux.sh
 ```
 
 ### macOS
 ```bash
-# 908 KB (SHA-256: 830057b4)
-curl -fsSL -o install-bom-ai-mac.zip https://github.com/siamcafe/bomai/releases/download/v2.1.7/install-bom-ai-mac.zip
+# 1 MB (SHA-256: a1c6d4d4)
+curl -fsSL -o install-bom-ai-mac.zip https://github.com/siamcafe/bomai/releases/download/v2.1.8/install-bom-ai-mac.zip
 unzip install-bom-ai-mac.zip && bash install-bom-ai-mac.command
 ```
 
@@ -60,10 +64,19 @@ unzip install-bom-ai-mac.zip && bash install-bom-ai-mac.command
 
 ## 🤖 เลือกโมเดล 2 ระดับตามสเปกเครื่อง
 
-| ระดับ | โมเดล | สเปกขั้นต่ำ | เหมาะกับ |
-|---|---|---|---|
-| **Light** | Qwen 4.2B Q4_K_M | CPU (ไม่ต้องมี GPU) | แชทไทย ถาม-ตอบ งานสั้น เครื่องทั่วไป |
-| **Pro** | GLM-4.7 12B Q4_K_M | GPU VRAM 12 GB+ | งานเอกสารยาว แปล คุณภาพสูงสุด |
+| ระดับ | โมเดล | ขนาด | รูปแบบ | รองรับ |
+|---|---|---|---|---|
+| 🟢 **Light** | BOM AI 4B VL | 4B params | GGUF Q4_K_M (~3.4 GB) | Windows / macOS / Linux — วิ่งบน CPU ได้ (RAM 8 GB+) |
+| 🔵 **Pro** | 709-L 27B DavidAU | 27B params | GGUF Q4_K_M (~17 GB: text 16.5 GB + mmproj 518 MB) | Windows / macOS / Linux — แนะนำ VRAM 12 GB+ หรือ Apple Silicon 32 GB+ |
+
+> ตั้งแต่ v2.1.8 ระดับ Pro เป็น **GGUF Q4_K_M ทุกแพลตฟอร์ม** (เดิมเคยจำกัดเฉพาะ Apple Silicon) — SHA-256 ของไฟล์โมเดล Pro: text `5c45be04` · mmproj `d6bb4695`
+
+สำหรับผู้ที่มี Ollama อยู่แล้ว ดึงโมเดลได้โดยตรง:
+
+```bash
+ollama pull siamcafe/bom-ai:light-v2.1.8
+ollama pull siamcafe/bom-ai:pro-v2.1.8
+```
 
 ตัวติดตั้งตรวจ RAM + VRAM ให้เอง แล้วแนะนำระดับที่เหมาะกับเครื่อง — แก้ไขเองได้เสมอ
 
@@ -94,6 +107,21 @@ unzip install-bom-ai-mac.zip && bash install-bom-ai-mac.command
 - คำถามที่พบบ่อย วิธีถอนการติดตั้ง และเทคนิคการใช้งาน อยู่ในคู่มือ
 
 ## 🗒️ บันทึกการอัปเดต
+
+### v2.1.8 — Web Search Default OFF + Pro GGUF ทุกแพลตฟอร์ม (2026-11-14)
+
+- **Web Search ปิดเป็นค่าเริ่มต้น** — แก้ 3 ชั้นพร้อมกัน (model preset + admin default + builtin tools) ไม่มีคำตอบถูกแทนที่ด้วย web disclaimer อีกต่อไป ผู้ใช้เปิดใช้เองได้เมื่อต้องการ
+- **Pro = GGUF Q4_K_M ทุกแพลตฟอร์ม** — 709-L 27B DavidAU (text 16.5 GB SHA-256 `5c45be04` + mmproj 518 MB SHA-256 `d6bb4695`) รันได้ทั้ง Windows / macOS / Linux
+- **Stream Resume (gateway rc3)** — ข้อความถูกตัดกลางคำจะถูกต่ออัตโนมัติ (สูงสุด 3 รอบ) อัตราตัดกลางคำจริงที่วัดได้ **0/272** (จาก 13.97% ใน v2.1.6)
+- **แท็ก Ollama ใหม่** — `siamcafe/bom-ai:light-v2.1.8` · `siamcafe/bom-ai:pro-v2.1.8` (น้ำหนักโมเดลเดิมจาก v2.1.7 ไม่ต้องโหลดใหม่)
+- **Installer SHA-256** — Windows `2a2e864c` · Linux `eef9fc3c` · macOS `a1c6d4d4`
+- **GOD CONFIG v9.1 ไม่เปลี่ยนแปลง** — พารามิเตอร์ล็อกค่าเดิมทุกตัว
+
+### v2.1.7 — Light Model Upgrade + Streaming Fix (2026-11-13)
+
+- **Light โมเดลใหม่** — น้ำหนัก Qwen3.5-4B ทางการ (`light-v2.1.7`) อ่านกราฟ/ชาร์ต/screenshot ชัดขึ้นชัดเจน
+- **Streaming fix** — gateway ต่อประโยคจากจุดสะอาดสุดเมื่อเกิดอักษรจีนหลุดระหว่าง stream
+- Installer: Windows ~2.2 MB (`6c1f9a77`) · Linux ~1.3 MB (`50009487`) · macOS ~1 MB (`830057b4`)
 
 ### v2.0.8 — Shared Infrastructure Update (2026-11-08)
 
