@@ -6,7 +6,7 @@
 
 [bomai.app](https://bomai.app) · [Download](https://bomai.app/download) · [ภาษาไทย](README.th.md)
 
-[![Download](https://img.shields.io/badge/download-bomai.app-blue)](https://bomai.app/download) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE) ![Version](https://img.shields.io/badge/version-v2.1.8-orange)
+[![Download](https://img.shields.io/badge/download-bomai.app-blue)](https://bomai.app/download) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE) ![Version](https://img.shields.io/badge/version-v2.1.9-orange)
 
 ## What is BOM AI?
 
@@ -33,8 +33,8 @@ Apple-Silicon-only). Pro model file SHA-256: text `5c45be04` · mmproj `d6bb4695
 Already running Ollama? Pull the models directly:
 
 ```bash
-ollama pull siamcafe/bom-ai:light-v2.1.8
-ollama pull siamcafe/bom-ai:pro-v2.1.8
+ollama pull siamcafe/bom-ai:light-v2.1.9
+ollama pull siamcafe/bom-ai:pro-v2.1.9
 ```
 
 The installer detects your RAM + VRAM and recommends the right tier automatically.
@@ -43,29 +43,29 @@ You can always override the choice.
 ## Quick Start
 
 Download from [bomai.app/download](https://bomai.app/download) or the
-[GitHub release v2.1.8](https://github.com/siamcafe/bomai/releases/tag/v2.1.8):
+[GitHub release v2.1.9](https://github.com/siamcafe/bomai/releases/tag/v2.1.9):
 
 ### Windows (PowerShell)
 
 ```powershell
-# Online installer, 2.2 MB (SHA-256: 2a2e864c) — fetches components when run
-Invoke-WebRequest -Uri "https://github.com/siamcafe/bomai/releases/download/v2.1.8/Install-BOM-AI-Online.bat" -OutFile "Install-BOM-AI-Online.bat"
+# Online installer, 2.2 MB (SHA-256: 48ec7c4b) — fetches components when run
+Invoke-WebRequest -Uri "https://github.com/siamcafe/bomai/releases/download/v2.1.9/Install-BOM-AI-Online.bat" -OutFile "Install-BOM-AI-Online.bat"
 .\Install-BOM-AI-Online.bat
 ```
 
 ### Linux
 
 ```bash
-# 1.3 MB (SHA-256: eef9fc3c)
-curl -fsSL -o install-bom-ai-linux.sh https://github.com/siamcafe/bomai/releases/download/v2.1.8/install-bom-ai-linux.sh
+# 1.3 MB (SHA-256: 7ccf639f)
+curl -fsSL -o install-bom-ai-linux.sh https://github.com/siamcafe/bomai/releases/download/v2.1.9/install-bom-ai-linux.sh
 bash install-bom-ai-linux.sh
 ```
 
 ### macOS
 
 ```bash
-# 1 MB (SHA-256: a1c6d4d4)
-curl -fsSL -o install-bom-ai-mac.zip https://github.com/siamcafe/bomai/releases/download/v2.1.8/install-bom-ai-mac.zip
+# 1 MB (SHA-256: 1e25d40b)
+curl -fsSL -o install-bom-ai-mac.zip https://github.com/siamcafe/bomai/releases/download/v2.1.9/install-bom-ai-mac.zip
 unzip install-bom-ai-mac.zip && bash install-bom-ai-mac.command
 ```
 
@@ -86,9 +86,9 @@ Nothing listens on the network.
 ## How It Works
 
 - **VL models**: curated Thai-capable vision-language models served by
-  [Ollama](https://ollama.com). The current Light model (v2.1.8, same weights
+  [Ollama](https://ollama.com). The current Light model (v2.1.9, same weights
   as v2.1.7) uses the untouched official Qwen3.5-4B weights
-  (`siamcafe/bom-ai:light-v2.1.8`)
+  (`siamcafe/bom-ai:light-v2.1.9`)
 - **Vision**: the models read Thai text inside images — receipts, signs,
   screenshots, charts
 - **Hardware detection**: the installer probes RAM + VRAM and maps it to
@@ -129,6 +129,29 @@ Nowhere. All chats and images are stored only on your computer, and you can
 delete them at any time.
 
 ## Release Notes
+
+### v2.1.9 (2026-11-24)
+
+- **Long chats with images keep working** — when a conversation (especially one with
+  several images) becomes longer than the model can read at once, the oldest messages of
+  that chat are left out and BOM AI keeps answering, instead of showing the capacity
+  notice on every answer (Light and Pro)
+- **num_ctx is honoured** — the num_ctx value of the Advanced settings now takes effect:
+  up to 16384 on Light and 32768 on Pro; the default stays 8192 (a larger value needs more memory)
+- **Image + web search** — the model always receives one system instruction (on Windows
+  two were sent when an image was sent with web search on)
+- **Intended repetition is not cut** — song choruses, the same line under different
+  headings and "write it N times" requests are answered in full; runaway loops are still stopped
+- **Chinese / Japanese text on request** — translations and questions about Chinese or
+  Japanese words, and Chinese text inside code blocks, are shown; ordinary Thai answers
+  still never contain Chinese characters
+- **Fresh install on Linux / macOS completes** — the v2.1.8 Linux and macOS installers
+  stopped at the final check of a first install (they looked for an icon file that no longer exists)
+- **Same model weights** — new Ollama tags `siamcafe/bom-ai:light-v2.1.9` ·
+  `siamcafe/bom-ai:pro-v2.1.9` (same weights as v2.1.8, no re-download)
+- **Upgrade** — run the new installer over the current install; chats and settings are kept
+- Installers: Windows (`48ec7c4b`) · Linux (`7ccf639f`) · macOS (`1e25d40b`)
+- Unchanged: default system prompt, sampling values, default context size (8192), Open WebUI, SearXNG
 
 ### v2.1.8 (2026-11-14)
 
