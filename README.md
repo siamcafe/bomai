@@ -7,7 +7,7 @@
 
 [เว็บไซต์ bomai.app](https://bomai.app) · [ดาวน์โหลด](https://bomai.app/download) · [คู่มือฉบับเต็ม](README.th.md) · [English](README.en.md)
 
-[![Download](https://img.shields.io/badge/download-bomai.app-blue)](https://bomai.app/download) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE) ![Version](https://img.shields.io/badge/version-v2.1.8-orange)
+[![Download](https://img.shields.io/badge/download-bomai.app-blue)](https://bomai.app/download) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE) ![Version](https://img.shields.io/badge/version-v2.1.9-orange)
 
 ## ✨ ความสามารถ
 
@@ -35,28 +35,28 @@
 
 > Han Fix 3-Layer enforcement: 0 Han leaks across 550+ test prompts — วัดจาก build จริงที่แจก ไม่ใช่คำกล่าวอ้าง
 
-## 🚀 ติดตั้ง 1 คลิก (v2.1.8)
+## 🚀 ติดตั้ง 1 คลิก (v2.1.9)
 
-ดาวน์โหลดจาก GitHub Release [v2.1.8](https://github.com/siamcafe/bomai/releases/tag/v2.1.8):
+ดาวน์โหลดจาก GitHub Release [v2.1.9](https://github.com/siamcafe/bomai/releases/tag/v2.1.9):
 
 ### Windows (PowerShell)
 ```powershell
-# ตัวติดตั้งออนไลน์ 2.2 MB (SHA-256: 2a2e864c) — ดึง component เองเมื่อรัน
-Invoke-WebRequest -Uri "https://github.com/siamcafe/bomai/releases/download/v2.1.8/Install-BOM-AI-Online.bat" -OutFile "Install-BOM-AI-Online.bat"
+# ตัวติดตั้งออนไลน์ 2.2 MB (SHA-256: 48ec7c4b) — ดึง component เองเมื่อรัน
+Invoke-WebRequest -Uri "https://github.com/siamcafe/bomai/releases/download/v2.1.9/Install-BOM-AI-Online.bat" -OutFile "Install-BOM-AI-Online.bat"
 .\Install-BOM-AI-Online.bat
 ```
 
 ### Linux
 ```bash
-# 1.3 MB (SHA-256: eef9fc3c)
-curl -fsSL -o install-bom-ai-linux.sh https://github.com/siamcafe/bomai/releases/download/v2.1.8/install-bom-ai-linux.sh
+# 1.3 MB (SHA-256: 7ccf639f)
+curl -fsSL -o install-bom-ai-linux.sh https://github.com/siamcafe/bomai/releases/download/v2.1.9/install-bom-ai-linux.sh
 bash install-bom-ai-linux.sh
 ```
 
 ### macOS
 ```bash
-# 1 MB (SHA-256: a1c6d4d4)
-curl -fsSL -o install-bom-ai-mac.zip https://github.com/siamcafe/bomai/releases/download/v2.1.8/install-bom-ai-mac.zip
+# 1 MB (SHA-256: 1e25d40b)
+curl -fsSL -o install-bom-ai-mac.zip https://github.com/siamcafe/bomai/releases/download/v2.1.9/install-bom-ai-mac.zip
 unzip install-bom-ai-mac.zip && bash install-bom-ai-mac.command
 ```
 
@@ -74,8 +74,8 @@ unzip install-bom-ai-mac.zip && bash install-bom-ai-mac.command
 สำหรับผู้ที่มี Ollama อยู่แล้ว ดึงโมเดลได้โดยตรง:
 
 ```bash
-ollama pull siamcafe/bom-ai:light-v2.1.8
-ollama pull siamcafe/bom-ai:pro-v2.1.8
+ollama pull siamcafe/bom-ai:light-v2.1.9
+ollama pull siamcafe/bom-ai:pro-v2.1.9
 ```
 
 ตัวติดตั้งตรวจ RAM + VRAM ให้เอง แล้วแนะนำระดับที่เหมาะกับเครื่อง — แก้ไขเองได้เสมอ
@@ -107,6 +107,19 @@ ollama pull siamcafe/bom-ai:pro-v2.1.8
 - คำถามที่พบบ่อย วิธีถอนการติดตั้ง และเทคนิคการใช้งาน อยู่ในคู่มือ
 
 ## 🗒️ บันทึกการอัปเดต
+
+### v2.1.9 — แก้ปัญหาที่ผู้ใช้แจ้ง 5 เรื่อง (2026-11-24)
+
+- **แชทยาวที่มีรูปตอบต่อได้** — เมื่อบทสนทนา (โดยเฉพาะแชทที่มีรูปหลายรูป) ยาวเกินที่โมเดลอ่านได้ในครั้งเดียว ระบบจะเว้นข้อความเก่าที่สุดของแชทนั้นแล้วตอบต่อ แทนการขึ้นข้อความแจ้งความจุทุกคำตอบ (ทั้ง Light และ Pro)
+- **ตั้งค่า num_ctx ได้จริง** — ค่า num_ctx ในหน้าตั้งค่า Advanced มีผลแล้ว: Light ตั้งได้ถึง 16384 และ Pro ถึง 32768 ค่าเริ่มต้นยังเป็น 8192 (ยิ่งตั้งสูงยิ่งใช้หน่วยความจำมากขึ้น)
+- **ส่งรูปพร้อมค้นเว็บ** — ระบบส่งคำสั่งระบบให้โมเดลชุดเดียวเสมอ (เดิมบน Windows ส่งสองชุดเมื่อส่งรูปพร้อมเปิดค้นเว็บ)
+- **คำตอบที่ตั้งใจให้ซ้ำไม่ถูกตัด** — เนื้อเพลงที่มีท่อนฮุค บรรทัดเดียวกันที่อยู่คนละหัวข้อ และการขอให้พิมพ์ซ้ำตามจำนวนครั้ง ตอบได้ครบ ส่วนคำตอบที่วนซ้ำเองยังถูกหยุดเหมือนเดิม
+- **อักษรจีนและญี่ปุ่นเมื่อผู้ใช้ขอ** — ขอแปลหรือถามคำภาษาจีน/ญี่ปุ่น และอักษรจีนที่อยู่ในบล็อกโค้ด แสดงผลได้แล้ว คำตอบภาษาไทยทั่วไปยังไม่มีอักษรจีนปนเหมือนเดิม
+- **ติดตั้งใหม่บน Linux / macOS จบได้** — ตัวติดตั้ง v2.1.8 บน Linux และ macOS หยุดที่ขั้นตรวจสอบสุดท้ายเมื่อติดตั้งครั้งแรก (หาไฟล์ไอคอนที่ไม่มีแล้ว) v2.1.9 แก้แล้ว
+- **โมเดลเดิม** — แท็กใหม่ `siamcafe/bom-ai:light-v2.1.9` · `siamcafe/bom-ai:pro-v2.1.9` น้ำหนักเดียวกับ v2.1.8 ไม่ต้องโหลดโมเดลใหม่
+- **อัปเดต** — รันตัวติดตั้งตัวใหม่ทับของเดิมได้เลย แชทและการตั้งค่าอยู่ครบ
+- **Installer SHA-256** — Windows `48ec7c4b` · Linux `7ccf639f` · macOS `1e25d40b`
+- **ไม่เปลี่ยน** — system prompt เริ่มต้น, ค่าการสุ่ม (sampling), ค่าเริ่มต้นของ context (8192), Open WebUI, SearXNG
 
 ### v2.1.8 — Web Search Default OFF + Pro GGUF ทุกแพลตฟอร์ม (2026-11-14)
 
