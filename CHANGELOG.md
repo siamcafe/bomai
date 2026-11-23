@@ -3,6 +3,38 @@
 All notable changes to BOM AI are documented here.
 For the full release history see [GitHub Releases](https://github.com/siamcafe/bomai/releases).
 
+## [2.1.9] — 2026-11-24
+
+**Five user-reported fixes**
+
+### Fixed
+
+- **แชทยาวที่มีรูปตอบต่อได้** — เมื่อบทสนทนายาวเกินที่โมเดลอ่านได้ในครั้งเดียว gateway จะเว้นข้อความเก่าที่สุดของแชทนั้น
+  แล้วตอบต่อ แทนการตอบด้วยข้อความแจ้งความจุทุกครั้ง (Light และ Pro)
+- **num_ctx ในหน้าตั้งค่า Advanced มีผล** — Light ถึง 16384, Pro ถึง 32768, ค่าเริ่มต้น 8192
+- **ส่งรูปพร้อมค้นเว็บ** — ส่งคำสั่งระบบให้โมเดลชุดเดียวเสมอ (เดิมบน Windows ส่งสองชุด)
+- **คำตอบที่ตั้งใจให้ซ้ำไม่ถูกตัด** — ท่อนฮุคของเพลง บรรทัดเดียวกันคนละหัวข้อ และการขอให้พิมพ์ซ้ำตามจำนวนครั้ง
+- **อักษรจีนและญี่ปุ่นเมื่อผู้ใช้ขอ** — คำแปล คำถามเรื่องคำภาษาจีน/ญี่ปุ่น และอักษรจีนในบล็อกโค้ด แสดงผลได้
+- **ติดตั้งใหม่บน Linux / macOS จบได้** — ขั้นตรวจสอบสุดท้ายใช้ไอคอนที่มากับตัวติดตั้ง (เดิมหา cache/favicon.png ที่ไม่มีแล้ว)
+- **ข้อความแจ้งความจุใหม่** — ขึ้นเฉพาะเมื่อข้อความหรือรูปเดียวใหญ่เกินไป และบอกวิธีแก้
+
+### Added
+
+- **แท็ก Ollama ใหม่** — `siamcafe/bom-ai:light-v2.1.9` ·
+  `siamcafe/bom-ai:pro-v2.1.9` (น้ำหนักโมเดลเดิมจาก v2.1.8)
+
+### Unchanged
+
+- default system prompt · sampling · default context size · Open WebUI · SearXNG · model weights
+
+### Installer SHA-256
+
+| File | OS | Size | SHA-256 |
+|---|---|---|---|
+| `Install-BOM-AI-Online.bat` | Windows | 2,405,335 B | `48ec7c4be6e69eab28933a8439421e59a28622e7c8ed3e80e42bf8510ad98d4a` |
+| `install-bom-ai-linux.sh` | Linux | 1,343,772 B | `7ccf639f9c046813e311b8e3d1fb32b54059e8d8881badc414918134f31c41fd` |
+| `install-bom-ai-mac.zip` | macOS | 1,013,096 B | `1e25d40ba3d9ae86ba49c3db04e0dd646d34ca8ce985dbf98091544646e6ca40` |
+
 ## [2.1.8] — 2026-11-14
 
 **Web Search Default OFF + Pro GGUF on every platform + Stream Resume rc3**
