@@ -2,7 +2,7 @@
 
 ![BOM AI](docs/images/banner.png)
 
-> Free, offline AI assistant for Thailand. One-click install. No cloud, no account, no telemetry.
+> Free AI assistant for Thailand that runs on your own computer. One-click install. No account, no telemetry. Chat works offline after install.
 
 [bomai.app](https://bomai.app) · [Download](https://bomai.app/download) · [ภาษาไทย](README.th.md)
 
@@ -11,8 +11,8 @@
 ## What is BOM AI?
 
 - One-click installer: bundles [Ollama](https://ollama.com) + [Open WebUI](https://openwebui.com) + curated Thai VL (vision-language) models
-- Runs 100% offline after install
-- Free forever: no signup, no ads, no message limits, no data collection
+- Chat works offline after install (web search is off by default and uses the internet when you turn it on)
+- Free forever: no signup, no ads in the app, no message limits, no data collection
 - Reads Thai text in images: receipts, slips, signs, documents, screenshots
 - "Heal the World" mission: free AI education for Thai communities — classes for schools and institutions, no charge
 
@@ -99,17 +99,17 @@ Nothing listens on the network.
 ## FAQ
 
 **Is it really free?**
-Yes — 100%. No subscription, no ads, no data selling, no credit card, no usage
+Yes — 100%. No subscription, no ads in the app, no data selling, no credit card, no usage
 cap. BOM AI is a free project so every Thai user can have a personal AI.
 
 **Is it safe?**
-Everything runs on your own computer. Chats, images, and files never leave the
+Everything runs on your own computer. Chats, images, and files stay on your
 machine, and there is no account to breach. Windows SmartScreen may warn because
 the binary is new — the download page lists SHA-256 hashes so you can verify
 what you downloaded.
 
 **Does it need internet?**
-Only for the initial download and install. After that, BOM AI works fully offline.
+For the initial download and install, and for web search if you turn it on (off by default). Chat works offline.
 
 **Does it run on old computers?**
 Yes. Any Windows/macOS/Linux machine with 8 GB RAM runs the Light model on CPU;
@@ -120,8 +120,8 @@ Not in this version — BOM AI is designed for desktop computers.
 
 **How is it different from ChatGPT?**
 ChatGPT runs on a company's servers and needs an account plus constant internet.
-BOM AI runs on your own machine: no signup, works offline, free and unlimited,
-and your data never leaves the computer. The trade-off: smaller models that are
+BOM AI runs on your own machine: no signup, chat works offline, free and unlimited,
+and your chats stay on the computer. The trade-off: smaller models that are
 not GPT-4 level — but enough for everyday Thai work, and far more private.
 
 **Where does my data go?**
