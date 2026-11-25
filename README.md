@@ -161,6 +161,6 @@ ollama pull siamcafe/bom-ai:pro-v2.1.9
 ## 📜 ลิขสิทธิ์
 
 - โปรเจกต์นี้ใช้สัญญาอนุญาต **MIT** — [LICENSE](LICENSE)
-- ส่วนประกอบภายใน: **Ollama** (MIT) · **Open WebUI** (BSD-3-Clause) · **Python** (PSF License)
+- ส่วนประกอบภายใน: **Ollama** (MIT) · **Open WebUI** (Open WebUI License: อิง BSD-3-Clause และมีเงื่อนไขเรื่องแบรนด์) · **Python** (PSF License)
 - เว็บไซต์: [bomai.app](https://bomai.app)
 

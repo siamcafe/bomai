@@ -94,7 +94,7 @@ Nothing listens on the network.
 - **Hardware detection**: the installer probes RAM + VRAM and maps it to
   a model tier before anything downloads
 - **Stack**: [Ollama](https://ollama.com) (model serving) + [Open WebUI](https://openwebui.com)
-  (chat interface, BSD-3-Clause) + our installer scripts and configs (this repo)
+  (chat interface, Open WebUI License) + our installer scripts and configs (this repo)
 
 ## FAQ
 
@@ -218,7 +218,7 @@ Powered by [Ollama](https://ollama.com) and [Open WebUI](https://openwebui.com)
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Open WebUI keeps its own BSD-3-Clause license;
+MIT — see [LICENSE](LICENSE). Open WebUI keeps its own Open WebUI License (BSD-3-Clause based, with a branding clause);
 model base licenses apply to their respective weights.
 
 Free code signing provided by SignPath.io, certificate by SignPath Foundation
